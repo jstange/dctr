@@ -1,0 +1,9 @@
+/**
+ * @file
+ * Local CSS - rename this to local.css, check the 
+ * box in theme settings and add your own styles here.
+ */
+#head {
+   min-height: 480px;
+   background: url(../images/baldy.jpg) no-repeat;
+}

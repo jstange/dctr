@@ -1,0 +1,11 @@
+name = Read Only node
+description = "Allow to set nodes as read only."
+package = "Read Only"
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2016-06-30
+version = "7.x-1.1"
+core = "7.x"
+project = "read_only_node"
+datestamp = "1467268747"
+

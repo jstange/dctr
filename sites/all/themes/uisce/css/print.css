@@ -1,0 +1,223 @@
+@media print {
+  size:8in 10in;
+  marks:crop cross;
+  margin:0px;
+}
+
+@page {
+  size:8in 10in;
+  marks:crop cross;
+  margin:0in;
+}
+
+body {
+  font-family: 'Open Sans', Verdana, Helvetica, sans-serif; 
+  size:8in 10in;
+  width:100%;
+  margin-top:auto;
+  margin-bottom:auto;
+  margin-left:auto;
+  margin-right:auto; 
+  padding-left:0.25in;
+  padding-right:0.25in;
+  padding-top:0.5in;
+  padding-bottom:0.5in;
+  background:white;
+}
+
+h2,h3,h4,h5,h6 {
+  font-weight:normal;
+  margin-top:0.5em;
+}
+
+.print-content {
+  margin:0in;
+  padding:0in;
+  width:100%;
+  height:10in;
+}
+.view-resume-upcoming-block {
+  margin:0in;
+  padding:0in;
+  width:100%;
+}
+
+.view-header {
+  height:2.5in;
+}
+.resume-info {
+  position:relative;
+  white-space:nowrap;
+  font-size:2em;
+  clear:none;
+  display:inline;
+  float:left;
+  top:0px;
+  width:4.25in;
+  text-align:right;
+}
+.resume-info h1 {
+  display:inline;
+  font-weight:bold;
+}
+.resume-inset {
+  clear:none;
+  display:inline;
+  max-width:3.25in;
+  margin-right:0.75in;
+  float:right;
+}
+.resume-section-header {
+  clear:both;
+  text-align:left;
+  position:static;
+}
+
+.view-resume .view-content table thead th {
+  display:none;
+}
+
+a {
+  color:black;
+  pointer-events: none;
+  cursor: pointer;
+  text-decoration:none;
+}
+
+table {
+  position:static;
+/*  width:8in;*/
+  max-height:4in;
+  min-width:7.8in;
+  max-width:8in;
+  overflow:hidden;
+  margin-left:auto;
+  margin-right:auto;
+  margin-top:1em;
+  margin-bottom:1em;
+}
+
+caption,h2 {
+  margin-left:0px;
+  clear:both;
+  position:static;
+  text-align:left;
+  font-size: 1.4em;
+  margin-bottom:0.5em;
+  margin-top:0px;
+}
+
+.view-content {
+  margin-top:1em;
+  position:relative;
+}
+.views-table {
+  top:-1em;
+  position:relative;
+  margin-left:0px;
+  margin-right:0px;
+  margin-top:0px;
+  padding-top:0px;
+  clear:both;
+  float:none;
+}
+
+th, tbody {
+  border:none !important;
+}
+tr {
+  border-bottom:1px solid lightgray;
+}
+td {
+  padding-left:0.1in;
+  padding-right:0.1in;
+  background-color:white;
+  font-size:11pt;
+}
+td.resume-role,
+td.views-field-field-roles {
+  padding-left:0in;
+  width:1.7in;
+}
+td.resume-title {
+  font-style:italic;
+  width:2.7in;
+}
+td.resume-company {
+  width:2.5in;
+}
+td.resume-director {
+  width:1.6in;
+  padding-right:0in;
+}
+td.resume-when {
+  display:none;
+}
+
+/*
+.view-footer td.resume-role,
+.view-footer td.views-field-field-roles {
+  width:1.3in;
+}*/
+.view-footer td.resume-role,
+.view-footer td.views-field-field-roles {
+  width:1.3in;
+}
+.view-footer td.resume-title {
+  font-style:italic;
+  width:2.7in;
+}
+.view-footer td.resume-company {
+  width:2.2in;
+}
+.view-footer td.resume-when {
+  display:block;
+  width:1.0in;
+}
+
+/*
+.views-field-field-roles,
+.resume-role,
+.resume-title ,
+.resume-company ,
+.resume-when {
+  font-size:small;
+}
+*/
+
+.resume-skills {
+  padding-left:0.1in;
+}
+
+.print-linkback {
+  margin-top:1em;
+  clear:both;
+  position:relative;
+  bottom:0px;
+  height:1in;
+  background: url(/sites/default/files/resume-qrcode.png) no-repeat;
+  background-size:1in;
+  background-position:right bottom;
+}
+.print-linkback a {
+  margin-left:1em;
+}
+
+.resume-headshot {
+  width:100%;
+  display:block;
+  margin:auto;
+  page-break-before:always;
+  page-break-after:always;
+}
+
+hr,
+.breadcrumb,
+.print-breadcrumb,
+.print-logo,
+.print-site_name,
+.print-pdf,
+.view-filters, 
+.page-title {
+  display:none;
+} 

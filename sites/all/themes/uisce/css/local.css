@@ -1,0 +1,1286 @@
+/**
+ * @file
+ * Local CSS - rename this to local.css, check the 
+ * box in theme settings and add your own styles here.
+ */
+
+#block-views-01c58813a3e34cd99c3c81308aa6819a {
+  display:block;
+  clear:both;
+}
+
+#bxslider_views_slideshow_main_your_campaigns-participating_companies div.bx-viewport {
+  padding-top:1em;
+  padding-bottom:1em;
+  height:140px !important;
+}
+
+#bxslider_views_slideshow_main_your_campaigns-participating_companies div.bx-viewport ul li {
+  margin-left:1em;
+  margin-right:1em;
+  text-align:center;
+}
+#bxslider_views_slideshow_main_your_campaigns-participating_companies div.bx-viewport ul li > div > a {
+  color: #8ea61f;
+  text-align:center;
+  font-size:x-small;
+}
+#bxslider_views_slideshow_main_your_campaigns-participating_companies div.bx-viewport ul li > div,
+#bxslider_views_slideshow_main_your_campaigns-participating_companies div.bx-viewport ul li > span.views-field-picture {
+  clear:both;
+  width:130px;
+  margin-left:auto;
+  margin-right:auto;
+  white-space:nowrap;
+}
+
+.views-field-field-facebook-ads ul,
+.views-field-field-facebook-ads li,
+.views-field-field-web-ads ul,
+.views-field-field-web-ads li {
+  list-style-type:none;
+  list-style-image:none;
+  display:inline-block;
+}
+
+span.campaign-title-readonly {
+  font-weight:bold;
+  font-size:1.2em;
+}
+
+.node-type-ad-campaign div.tabs-wrapper {
+  display:none;
+}
+
+div.view-commerce-orders {
+  display:block;
+  clear:both;
+}
+
+div.views-field-field-final-upkeep-total div,
+div.views-field-field-estimated-cost div {
+  display:inline-block;
+}
+span.views-field-field-dates span,
+div.views-field-field-final-upkeep-total div.field-content,
+div.views-field-field-estimated-cost div.field-content {
+  font-weight:bold;
+}
+.real-fee {
+  color:green;
+}
+
+.view-your-campaigns li.views-row {
+  padding-top:1.5em;
+  padding-bottom:0.5em;
+  border-bottom:1px dotted black;
+  min-height:120px;
+}
+.view-your-campaigns .views-field-edit-node a {
+  font-size:1.2em;
+}
+
+#commerce-checkout-form-checkout legend,
+#commerce-checkout-form-review legend {
+  margin-bottom:0.5em;
+  margin-left:0.5em;
+}
+#commerce-checkout-form-checkout #edit-customer-profile-billing {
+  font-size:small;
+}
+#commerce-checkout-form-checkout #edit-buttons .fieldset-wrapper,
+#commerce-checkout-form-review #edit-buttons .fieldset-wrapper {
+  padding-bottom:0.5em;
+}
+#commerce-checkout-form-checkout #edit-buttons #edit-cancel,
+#commerce-checkout-form-review #edit-buttons #edit-back {
+  margin-left:0.5em;
+}
+input#edit-checkout {
+  display:none;
+}
+
+#block-block-5,
+#block-block-2,
+section#block-views-69a86490c18de4c4bd168d8561eac4db,
+div#block-views-69a86490c18de4c4bd168d8561eac4db,
+section#block-commerce-cart-cart,
+div#block-commerce-cart-cart { 
+  clear:left;
+  max-width:50%;
+  display:inline-block;
+  float:left;
+}
+.page-user-1 section#block-views-69a86490c18de4c4bd168d8561eac4db,
+.page-user-1 div#block-views-69a86490c18de4c4bd168d8561eac4db {
+  display:block;
+  max-width:100%;
+  float:none;
+  clear:both;
+}
+
+.page-user div#block-system-main {
+  max-width:50%;
+  display:inline-block;
+  float:right;
+  margin-right:3em;
+}
+.page-user-edit div#block-system-main {
+  max-width:100%;
+  display:block;
+}
+div.profile div.user-picture,
+.field-name-field-email-contacts,
+.field-name-field-company-website {
+  clear:both;
+  margin-left:auto;
+  margin-right:auto;
+  text-align:right;
+}
+.page-user-1 #block-block-2 {
+  display:none;
+}
+.views-field-picture {
+  display:inline;
+  float:right;
+  clear:none;
+}
+.field-name-field-email-contacts {
+  margin-top:1em;
+}
+#block-block-4,
+#block-views-your-campaigns-block-1,
+#block-views-your-campaigns-block {
+  display:block;
+  clear:both;
+  /*
+  float:left;
+  max-width:50%;
+  */
+}
+
+/* floating cost estimator whatzit */
+#block-block-3 {
+  position:fixed;
+  padding-left:1em;
+  padding-right:1em;
+  padding-bottom:1em;
+  top:1em;
+  right:1em;
+  background:white;
+  border-radius:1em;
+  border:1px solid green;
+}
+#campaign-startup,
+#campaign-weeks,
+#campaign-upkeep,
+#campaign-total {
+  font-weight:bold;
+}
+
+div.start-date-wrapper, 
+div.end-date-wrapper {
+  display:inline-block;
+  clear:none;
+  width:30%;
+}
+div.end-date-wrapper label {
+  display:inline-block;
+  float:left;
+}
+div.start-date-wrapper label, 
+div.start-date-wrapper .description,
+div.end-date-wrapper .description,
+div.end-date-wrapper .form-item-field-dates-und-0-value2-date label {
+  display:none;
+}
+
+#ad-campaign-node-form {
+  display:block;
+  clear:both;
+}
+
+div.field-name-field-campaigns .form-type-checkbox {
+  display:inline-block;
+  clear:none;
+  width:15%;
+}
+div.field-name-field-campaigns .description { 
+  margin-left:0.5em;
+}
+
+fieldset.form-wrapper,
+#edit-field-bid,
+div.form-item-title,
+#edit-field-campaigns {
+  border-bottom: 1px dotted #ccc;
+  border-left: 1px dotted #ccc;
+  border-top:none;
+  border-right:none;
+  padding:1.1em;
+}
+div.form-item-title {
+  padding-left:0px;
+}
+
+div.field-name-field-bid {
+  position:relative;
+}
+div.field-name-field-bid label {
+  position:relative;
+  top:-2em;
+  left:-1em;
+}
+div#edit-field-bid-und-value {
+  position:relative;
+  left:30%;
+}
+div.sliderfield-bubble:before {
+  content:"$";
+}
+div.form-wrapper label,
+div.form-wrapper legend,
+div.form-item-title label {
+  font-size:1.1em;
+  padding-left:0.5em;
+}
+fieldset.form-wrapper,
+#edit-field-campaigns {
+  padding:0px;
+}
+#edit-field-campaigns-und,
+fieldset.form-wrapper .fieldset-wrapper,
+.node-type-ad-campaign #edit-title {
+  margin-left:2em;
+}
+
+.r_arrow_small {
+  width:1em;
+  height:1em;
+  margin-right:0.3em;
+  vertical-align:middle;
+}
+
+.location-locations-header,
+.date-in-parts,
+.node-headshot .article-title,
+.node-type-headshot #breadcrumbs,
+#submit-wrapper {
+  display:none;
+}
+
+/*
+ * We're going full responsive here, not just adaptive, because our layout is
+ * simple.  Override Bamboo's stuff.
+ */
+#head {
+  margin-top:2.5em;
+  position:relative;
+  max-width:94%;
+  width:94%;
+  z-index:101;
+  background-size:auto 100%;
+  background-color:white;
+  background-position:right top;
+}
+#colophon,
+#menu-wrapper,
+#content-wrapper  {
+  position:relative;
+  max-width:94%;
+  width:94%;
+  z-index:0;
+}
+#colophon div,
+#menu-wrapper div,
+#content-wrapper div {
+  z-index:0;
+}
+
+
+#content {
+  margin-left:auto;
+  margin-right:auto;
+  padding-left:0px;
+  padding-right:0px;
+  width:94% !important;
+  float:none !important;
+}
+#menu-wrapper {
+  background: -moz-repeating-linear-gradient(#555, #333 100%);
+  background: -webkit-repeating-linear-gradient(#555, #333 100%);
+  background: -o-repeating-linear-gradient(#555, #333 100%);
+  background: -ms-repeating-linear-gradient(#555, #333 100%);
+  background: repeating-linear-gradient(#555, #333 100%);
+  margin-top:2em;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+hgroup {
+  width:100% !important;
+  padding:0px;
+  margin-left:auto;
+  margin-right:auto;
+  position:relative;
+  text-align:center;
+  display:block;
+  white-space:normal;
+  clear:both;
+}
+#site-title-wrapper {
+  width:60%;
+  text-align:right;
+  display:inline-block;
+  clear:both;
+  position:relative;
+  white-space:nowrap;
+  padding:0px;
+}
+#site-title a {
+  font-size:3em;
+  white-space:nowrap;
+  padding:0px;
+  text-transform:uppercase;
+  color:black;
+}
+.site-slogan {
+  font-size:3.5em;
+  white-space:nowrap;
+  padding:0px;
+  text-transform:uppercase;
+  color:black;
+}
+
+.region-header-contact {
+  display:inline;
+  clear:both;
+  text-align:right;
+  position:relative;
+  margin-right:0;
+}
+.region-header-contact .phone-contact {
+  font-size:2em;
+}
+.region-header-contact .email-contact {
+  font-size:2em;
+}
+.region-header-contact div,
+.region-header-contact div.block-content,
+.region-header-contact p {
+  display:inline;
+  padding-bottom:0px;
+  margin-bottom:0px;
+}
+.block-social-media {
+  position:fixed;
+  width:100%;
+  height:1.7em;
+  padding-top:0.25em;
+  padding-bottom:0.5em;
+  margin:0px;
+  text-align:center;
+  background-color:black;
+  left:0px;
+  bottom:0px;
+  opacity:0.8;
+  -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+  filter: alpha(opacity=80);
+}
+div.region-header-social,
+div.block-social-media,
+div.block-social-media div {
+  zoom:1;
+  z-index:1001 !important;
+}
+.block-social-media a,
+.block-social-media p,
+.block-social-media img {
+  display:inline;
+  padding-right:0.75em;
+  clear:none;
+  color:white !important;
+  font-size:1em !important;
+}
+
+
+
+.view-resume .view-content table {
+  max-width:94%;
+  font-size:small;
+}
+.view-resume .view-content table thead th {
+  background:white;
+  font-size:1.2em;
+  border:none;
+  display:table-cell;
+}
+.resume-when {
+  white-space:nowrap;
+}
+
+/*
+ * The little showcase slideshow that lives in the header.
+ */
+.region-header-slideshow {
+  height:167px !important;
+  width:250px !important;
+  bottom:10%;
+  position:absolute;
+  z-index:400;
+  display:inline-block;
+  margin-left:0px;
+  left:0px;
+}
+
+.view-front-page-mini-slideshow {
+  height:167px !important;
+  width:250px !important;
+  background: transparent;
+  margin-bottom:20px;
+}
+
+.view-front-page-mini-slideshow .views-cycle-slideshow-main-frame {
+  margin:0px;
+  background: transparent;
+  text-align:center;
+  padding-right:25px;
+  padding-bottom:25px;
+}
+
+.view-front-page-mini-slideshow img {
+  width:250px !important;
+  height:167px !important;
+  background:black;
+  border-top-right-radius: 35px;
+  border-bottom-right-radius: 35px;
+  box-shadow: 10px 10px 17px black;
+  -webkit-box-shadow: 10px 10px 17px black;
+  -moz-box-shadow: 10px 10px 17px black;
+}
+
+.print-pdf {
+  display:inline;
+  float:right;
+  margin-right:5%;
+  white-space:nowrap;
+}
+.block-social-media-static {
+  margin-top:1.5em;
+  width:100%;
+  margin-left:0px;
+  margin-right:0px;
+  padding-left:3%;
+}
+.block-social-media-static p {
+  white-space:nowrap;
+  display:inline;
+  width:15%;
+  margin:0px;
+  padding-right:3%;
+}
+
+.field-name-field-dates div.field-items,
+.field-name-field-dates div.field-items div.field-item,
+.field-name-field-dates div.field-items div.field-item span {
+  font-size:small;
+}
+.field-name-field-venue {
+  font-size:small;
+  display:block;
+  position:absolute;
+  right:2em;
+  top:2em;
+}
+.node-gig .field-name-field-venue {
+  top:-1.75em;
+}
+
+.field-slideshow-pager {
+  right:0px;
+  top:10%;
+  position:absolute;
+}
+.field-slideshow-pager li {
+  clear:both;
+  list-style-type:none;
+  list-style-image:none;
+}
+.field-slideshow-pager li img {
+  border:2px solid black;
+  border-radius:5px;
+}
+
+.views-slideshow-controls-bottom,
+.views-slideshow-controls-bottom div,
+.views-slideshow-controls-bottom img {
+  display:inline;
+}
+
+/* XXX paste in differential color scheme stuff */
+.view-headshot-gallery,
+.view-gig-photo-gallery {
+  padding:1em;
+  margin-left:auto;
+  margin-right:auto;
+  text-align:center;
+  border-radius: 15px;
+}
+.view-headshot-gallery .view-header {
+  text-align:left;
+}
+.view-headshot-gallery a,
+.view-gig-photo-gallery a {
+  font-style:italic;
+  text-decoration:none;
+}
+.view-headshot-gallery .views-field-field-headshot img,
+.view-gig-photo-gallery .views-field-field-gig-photo img {
+  border-radius: 2em;
+}
+.view-headshot-gallery,
+.view-headshot-gallery .views-field-field-headshot-credit .views-label,
+.view-headshot-gallery .views-field-field-headshot-credit .field-content,
+.view-headshot-gallery .views-field-field-headshot-credit .link-item,
+.view-headshot-gallery .views-field-field-headshot-credit .link-title,
+.view-gig-photo-gallery .views-field-field-title {
+  display:inline;
+}
+.view-headshot-gallery .views-field-field-headshot-credit,
+.view-gig-photo-gallery .views-field-field-gig-photo-credit,
+.view-gig-photo-gallery .views-field-field-gig-photo-also-pictured {
+  display:block;
+  font-size:x-small;
+}
+/* XXX add other color schemes*/
+.bx-pager.bx-default-pager a:hover, .bx-wrapper .bx-pager.bx-default-pager a.active {
+  background: #b54617;
+}
+.bx-wrapper .bx-pager.bx-default-pager a {
+  background: #eaeaea;
+}
+.bx-wrapper .bx-viewport {
+  -moz-box-shadow:none;
+  -webkit-box-shadow:none;
+  box-shadow:none;
+}
+#logo {
+  position:relative;
+  display:inline-block;
+  clear:none;
+  padding:0px;
+  margin-left:0px;
+  margin-top:0px;
+  margin-bottom:0px;
+  margin-right:0.5em;
+  float:right;
+  width:33%;
+  height:100%;
+  bottom:0px;
+  vertical-align:bottom;
+}
+#logo img {
+  max-width:100%;
+  max-height:100%;
+  position:absolute;
+  vertical-align:bottom;
+  bottom:0px;
+  right:0px;
+}
+
+/* Things that only happen at grownup sizes */
+@media only screen and (min-width:990px) {
+  #head,
+  #menu-wrapper,
+  #colophon,
+  #content-wrapper {
+    width:990px;
+  }
+  #head, hgroup {
+    height:450px;
+    max-height:450px;
+  }
+  .block-social-media-static {
+    display:none;
+  }
+  hgroup {
+    position:relative;
+    bottom:0px;
+  }
+  #site-title-wrapper {
+    position:relative;
+    display:inline-block;
+    max-width:67%;
+    clear:none;
+  }
+
+  .region-header-slideshow,
+  .view-front-page-mini-slideshow,
+  .view-front-page-mini-slideshow img {
+    height:167px !important;
+    width:250px !important;
+  }
+}
+
+/* Regular screens that land on the small side */
+@media only screen and (max-width:989px) {
+  #site-title a {
+    font-size:2.5em;
+  }
+  .site-slogan {
+    font-size:2.5em;
+  }
+
+  .region-header-contact .phone-contact {
+    font-size:1.4em;
+  }
+  .region-header-contact .email-contact {
+    font-size:1.1em;
+  }
+  #head, hgroup {
+    height:350px;
+    max-height:350px;
+    width:94%;
+  }
+  .block-social-media {
+    height:1.4em;
+    font-size:0.75em !important;
+    padding-bottom:1em;
+  }
+  .block-social-media a,
+  .block-social-media p,
+  .block-social-media img {
+    padding-right:0.25em;
+  }
+
+  .region-header-slideshow {
+    bottom:0px;
+    margin-bottom:20px;
+  }
+  .view-front-page-mini-slideshow {
+    margin-bottom:0px;
+  }
+
+  .view-front-page-mini-slideshow .views-cycle-slideshow-main-frame {
+    margin-bottom:0px;
+  }
+  .region-header-slideshow,
+  .view-front-page-mini-slideshow,
+  .view-front-page-mini-slideshow img {
+    height:167px !important;
+    width:250px !important;
+  }
+
+  .resume-company ,
+  .resume-director ,
+  .resume-when {
+    font-size:x-small;
+  }
+  .block-social-media-static {
+    display:none;
+  }
+}
+
+/* Menu manipulation that only occurs at reasonable screen sizes */
+@media only screen and (min-width:768px) {
+  #menu-wrapper,
+  #menu-wrapper #main-menu,
+  #menu-wrapper #main-menu #nav-wrap,
+  #menu-wrapper #main-menu .menu-navigation-container,
+  #menu-wrapper #main-menu .menu-navigation-container #nav-wrap,
+  #menu-wrapper #main-menu .menu-navigation-container #nav-wrap .menu,
+  #main-menu ul.menu.ul-depth-0
+  {
+    margin-left:auto !important;
+    margin-right:auto !important;
+    text-align:center;
+    position:relative;
+  }
+  #main-menu ul.menu.ul-depth-0 {
+    display:inline-block !important;
+    line-height:100% !important;
+  }
+  #menu-wrapper #main-menu li {
+    padding-bottom:0px;
+    line-height:100%;
+    height:100% !important;
+    margin-bottom:0px;
+    font-size:1.8em;
+    margin-left:1em;
+    margin-right:1em;
+  }
+}
+
+/* Tablet territory */
+@media only screen and (max-width:767px) {
+  #logo {
+    display:none;
+  }
+  #site-title-wrapper {
+    width:94%;
+    margin:0px;
+  }
+  #head, hgroup {
+    height:auto;
+    max-height:auto;
+    width:auto;
+    max-width:auto;
+  }
+  /*
+  #site-title {
+    position:static;
+    margin-left:auto;
+    margin-right:auto;
+    text-align:center;
+    float:none;
+  }
+  */
+  #site-title,
+  #site-title a {
+    white-space:normal;
+    font-size:1.8em;
+  }
+  .site-slogan {
+    font-size:3em;
+  }
+  /*
+  .region-header-contact {
+    position:static;
+    display:inline-block;
+    margin-left:auto;
+    margin-right:auto;
+    float:none;
+  }
+  .region-header-contact {
+    text-align:center;
+    font-size:2em;
+  }
+  */
+  .block-social-media {
+    display:none;
+  }
+
+  .views-field-field-roles,
+  .resume-role,
+  .resume-title,
+  .resume-company,
+  .resume-director {
+    white-space:normal;
+    font-size:x-small;
+  }
+  .resume-when {
+    display:none;
+  }
+  .resume-section-header {
+    clear:both;
+    text-align:left;
+  }
+  .print-pdf {
+    display:block;
+    float:none;
+    clear:both;
+  }
+  
+  .region-header-slideshow  {
+    margin-bottom:20px;
+    bottom:0px;
+  }
+  .view-front-page-mini-slideshow img {
+    border-top-right-radius: 25px;
+    border-bottom-right-radius: 25px;
+    box-shadow: 7px 7px 13px black;
+    -webkit-box-shadow: 7px 7px 13px black;
+    -moz-box-shadow: 7px 7px 13px black;
+  }
+
+  .region-header-slideshow,
+  .view-front-page-mini-slideshow,
+  .view-front-page-mini-slideshow img {
+    left:0px;
+    height:124px !important;
+    width:186px !important;
+  }
+
+  .block-social-media-static {
+    width:100%;
+    display:block;
+    padding-left:0%;
+    margin-right:auto;
+    margin-left:auto;
+  }
+  .block-social-media-static p {
+    clear:both;
+    display:inline;
+    margin-right:auto;
+    margin-left:auto;
+    padding-right:0px;
+    padding-bottom:0.5em;
+  }
+  #menu-wrapper #main-menu {
+    margin-left:0px;
+  }
+  #main-menu ul.menu.ul-depth-0 {
+    display:none;
+  }
+  .field-name-field-venue {
+    position:static;
+    top:auto;
+    right:auto;
+    left-margin:auto;
+    right-margin:auto;
+  }
+  #edit-field-professional-value-wrapper,
+  #edit-field-professional-value,
+  #edit-field-staging-value-wrapper,
+  #edit-field-staging-value,
+  #edit-field-film-value-wrapper,
+  #edit-field-film-value,
+  #edit-field-contemporary-value-wrapper,
+  #edit-field-contemporary-value {
+    margin:0.5em;
+    width:94% !important;
+    display:block !important;
+    clear:both !important;
+    float:none !important;
+  }
+}
+
+/* Phone territory */
+@media only screen and (max-width:460px) {
+  #logo {
+    display:none;
+  }
+  #site-title,
+  #site-title a {
+    font-size:2em;
+    line-height:1.1em;
+  }
+  #site-title {
+    text-align:center;
+    white-space:normal;
+  }
+  .site-slogan {
+    text-align:center;
+    font-size:2em;
+  }
+  .region-header-contact {
+    text-align:center;
+    margin-right:auto;
+    margin-left:auto;
+    float:none;
+    display:block;
+  }
+  .region-header-contact .phone-contact {
+    font-size:1.5em;
+  }
+  .region-header-contact .email-contact {
+    font-size:1em;
+  }
+
+  .view-resume .view-content table thead th {
+    font-size:1em;
+  }
+  .view-resume .view-content table {
+    max-width:94%;
+  }
+  .views-field-field-roles,
+  .resume-role,
+  .resume-title ,
+  .resume-company ,
+  .resume-director {
+    white-space:normal;
+    font-size:x-small;
+  }
+  .resume-when {
+    display:none;
+  }
+  .print-pdf {
+    clear:both;
+  }
+  .block-social-media-static {
+    width:100%;
+    padding-left:0%;
+    margin-right:auto;
+    margin-left:auto;
+  }
+  .block-social-media-static p {
+    clear:both;
+    display:block;
+    margin-right:auto;
+    margin-left:auto;
+    padding-right:0px;
+    padding-bottom:0.5em;
+  }
+  .region-header-slideshow {
+    margin-left:auto;
+    margin-right:auto;
+    float:none;
+    position:static;
+    display:block;
+    text-align:center;
+  }
+  .view-front-page-mini-slideshow img {
+    border-radius: 35px;
+    background:black;
+    border:2px black solid;
+    box-shadow:none;
+    -webkit-box-shadow:none;
+    -moz-box-shadow:none;
+  }
+
+  .region-header-slideshow,
+  .view-front-page-mini-slideshow,
+  .view-front-page-mini-slideshow img {
+    left:0px;
+    height:124px !important;
+    width:186px !important;
+  }
+
+  .field-slideshow-pager {
+    display:none;
+  }
+}
+
+#cboxClose {
+  top:0;
+}
+#cboxNext, #cboxPrevious, #cboxCurrent, #cboxTitle {
+  display:none !important;
+}
+
+#cboxContent .article-title a {
+  pointer-events: none;
+  cursor: default;
+  font-weight:bold;
+}
+
+.article-title {
+  background:transparent !important;
+}
+
+.field-name-field-simplenews-term,
+.submitted {
+  display:none;
+}
+
+/*
+ * Formatting for the resume.
+ */
+.view-resume .view-content table,
+.view-resume .view-content table tr,
+.view-resume .view-content table td {
+  max-width:100%;
+  background:white;
+  border:none;
+  font-size:small;
+}
+.view-resume .view-content table tr {
+  border-bottom:1px solid lightgray;
+}
+
+
+.view-id-resume .field-name-field-show-name {
+  display:none;
+}
+
+.field-item p,
+.resume-when div p {
+  margin:0px;
+}
+
+.resume-title div {
+  font-style:italic;
+}
+
+
+/*
+ * Formatting for the teasers and colorbox popups of extended show information.
+ */
+.node-links {
+  display:none;
+}
+
+
+div header p.field-name-field-roles,
+article header p.field-name-field-roles {
+  font-size:1em;
+  line-height:1.3em;
+  margin:0px;
+  padding:0px;
+}
+.views-field-field-roles {
+  border:none;
+  margin-top:0px;
+  padding-top:0px;
+  margin-bottom:0px;
+  padding-bottom:0px;
+  display:inline;
+  font-weight:bold;
+  clear:none;
+}
+
+.field-name-field-show-name p {
+  font-style:italic;
+}
+.field-name-field-director p {
+  padding:0px;
+}
+.field-name-field-director p:before {
+  content:"Directed by ";
+}
+
+.field-name-field-understudy {
+  display:none;
+}
+
+.field-name-field-details div div p {
+  margin-top:1em;
+  margin-bottom:1em;
+}
+
+/*
+ * The optional slideshow in show teasers and popup profiles.
+ */
+
+.field-name-field-gig-photos,
+.field-name-field-gig-photos .field-items,
+.field-name-field-gig-photos .field-items .field-item,
+.field-name-field-gig-photos .field-items .field-item .field-slideshow-wrapper,
+.field-name-field-gig-photos .field-items .field-item .field-slideshow-wrapper .field-slideshow {
+  margin-left:auto;
+  margin-right:auto;
+  margin-bottom:0px;
+  text-align:center;
+  width:100%;
+  clear:both;
+  display:block;
+  padding:0px !important;
+  overflow:visible;
+  left:auto !important;
+  position:relative;
+}
+.field-name-field-gig-photos .field-slideshow-slide {
+  margin-top:1em;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  width:95% !important;
+  clear:both;
+  display:block;
+  text-align:center;
+}
+.field-name-field-gig-photos .field-slideshow-slide img {
+  margin-left:auto !important;
+  margin-right:auto !important;
+  text-align:center;
+  clear:both;
+  border:5px solid transparent;
+  background:#525252;
+  border-radius: 2em;
+}
+.field-name-field-gig-photos .field-slideshow-slide .field-slideshow-caption {
+  text-align:center;
+  font-size:normal;
+  color:#525252;
+/*  height:4em !important; */
+  overflow:visible;
+  display:block;
+}
+.field-slideshow-caption .photo-credit,
+.field-slideshow-caption .photo-also-pictured {
+  text-align:center;
+  clear:both;
+  position:static;
+  color:#525252;
+  font-size:xx-small;
+}
+.field-slideshow-caption .photo-also-pictured {
+  padding-bottom:1em;
+}
+
+.resume-inset,
+.resume-headshot,
+.resume-info {
+  display:none;
+}
+
+.page-title {
+  width:94%;
+  margin-top:0.8em;
+  padding: 1px 0 3px 14px;
+  -moz-border-radius-topleft: 24px;
+  -webkit-border-top-left-radius: 24px;
+  border-radius: 24px 0 0 0;
+}
+.color-palette-dark-rust .page-title {
+  background: #a7461c;
+  background-image: -ms-linear-gradient(bottom, #ce4c14 0%, #a7461c 100%);
+  background-image: -moz-linear-gradient(bottom, #ce4c14 0%, #a7461c 100%);
+  background-image: -o-linear-gradient(bottom, #ce4c14 0%, #a7461c 100%);
+  background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #ce4c14), color-stop(1, #a7461c));
+  background-image: -webkit-linear-gradient(bottom, #ce4c14 0%, #a7461c 100%);
+  background-image: linear-gradient(to top, #ce4c14 0%, #a7461c 100%);
+  color: #eaeaea;
+}
+.color-palette-warm-purple .page-title {
+  background: #494c62;
+  background-image: -ms-linear-gradient(top, #626584 0%, #494c62 100%);
+  background-image: -moz-linear-gradient(top, #626584 0%, #494c62 100%);
+  background-image: -o-linear-gradient(top, #626584 0%, #494c62 100%);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #626584), color-stop(1, #494c62));
+  background-image: -webkit-linear-gradient(top, #626584 0%, #494c62 100%);
+  background-image: linear-gradient(to bottom, #626584 0%, #494c62 100%);
+  color: #eaeaea;
+}
+.color-palette-green-uisce .page-title {
+  background: #7e8e34;
+  background-image: -ms-linear-gradient(bottom, #a6bb47 0%, #7e8e34 100%);
+  background-image: -moz-linear-gradient(bottom, #a6bb47 0%, #7e8e34 100%);
+  background-image: -o-linear-gradient(bottom, #a6bb47 0%, #7e8e34 100%);
+  background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #a6bb47), color-stop(1, #7e8e34));
+  background-image: -webkit-linear-gradient(bottom, #a6bb47 0%, #7e8e34 100%);
+  background-image: linear-gradient(to top, #a6bb47 0%, #7e8e34 100%);
+  color: #eaeaea;
+}
+
+caption {
+  font-size: 1.7em;
+  border:none;
+  text-align:left;
+  font-weight: 400;
+  margin: 14px 0px 4px 0px;
+  padding: 0;
+}
+.color-palette-dark-rust caption {
+  color: #b54617;
+}
+.color-palette-warm-purple caption {
+  color: #626584;
+}
+.color-palette-green-uisce caption {
+  color: #8ea61f;
+}
+
+div.node-teaser,
+article.node-teaser {
+  padding-bottom:1em;
+  border-bottom:1px dotted gray;
+  height:100%;
+  position:relative;
+}
+
+.print-linkback {
+  display:none;
+}
+
+@keyframes loading {
+  0%   {opacity: 0.5;}
+  50% {opacity: 1.0;}
+  100% {opacity: 0.5;}
+}
+@-webkit-keyframes loading {
+  0%   {opacity: 0.5;}
+  50% {opacity: 1.0;}
+  100% {opacity: 0.5;}
+}
+
+.glow {
+  animation: loading 0.75s;
+  -webkit-animation: loading 0.75s;
+
+  animation-iteration-count:infinite;
+  -webkit-animation-iteration-count:infinite;
+}
+
+p {
+  padding:0.5em;
+}
+ol li {
+  padding-bottom:0.5em;
+}
+div.blogimage {
+  display:inline-block;
+  margin:0.5em;
+  border:5px solid transparent;
+  background:#525252;
+  border-radius: 1em;
+  position:relative;
+  text-align:center;
+  color:white;
+}
+img.blogimage {
+  display:inline-block;
+  margin:0.5em;
+  border:5px solid transparent;
+  background:#525252;
+  border-radius: 1em;
+  position:relative;
+}
+div.blogimage img.blogimage {
+  clear:both;
+}
+img.transparent-blogimage {
+  display:inline-block;
+  margin:0.5em;
+  border:5px solid transparent;
+  position:relative;
+}
+.right {
+  float:right;
+}
+.left {
+  float:left;
+}
+
+.location-map {
+    white-space: nowrap;
+}
+.location-map img {
+  width: 1.75em;
+  height: 1.75em;
+  vertical-align: middle; }
+
+div.node-gig header,
+article.node-gig header {
+  position:relative;
+  top:1em;
+}
+
+.field-name-field-tickets .field-label {
+  font-weight:normal;
+}
+
+.rss ,
+.email,
+.gplus,
+.twitter,
+.fb {
+  width:16px;
+  height:16px;
+  display:inline-block;
+  clear:none;
+  background-size: 16px 16px;
+  background-repeat:no-repeat;
+}
+
+.rss {
+  background-image:url("/misc/feed.png");
+}
+.email {
+  background-image:url("../images/mail-icon.png");
+}
+.gplus {
+  background-image:url("../images/google-plus-icon.png");
+}
+.twitter {
+  background-image:url("../images/twitter-icon.png");
+}
+.fb {
+  background-image:url("../images/facebook-icon.png");
+}
+
+.hidden {
+  display:none;
+}
+.ticket-price div {
+  display:inline;
+}
