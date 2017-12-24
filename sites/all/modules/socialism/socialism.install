@@ -1,0 +1,7 @@
+<?php
+
+function socialism_schema() {
+  $schema = array();
+  $schema['cache_adroll'] = drupal_get_schema_unprocessed('system', 'cache');
+  return $schema;
+}

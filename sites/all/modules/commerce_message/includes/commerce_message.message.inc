@@ -590,6 +590,8 @@ function commerce_message_message_form_validate($form, &$form_state) {
  * Submit callback for commerce_message_message_form().
  */
 function commerce_message_message_form_submit($form, &$form_state) {
+  // Update date to current one
+  $form['#entity']->timestamp = REQUEST_TIME;
   // Notify field widgets.
   field_attach_submit('message', $form['#entity'], $form['content'], $form_state);
   entity_save('message', $form['#entity']);

@@ -115,13 +115,6 @@ $vars['rdf'] = new stdClass;
       'weight' => '9999',
       )
     );
-  drupal_add_js(drupal_get_path('theme', 'uisce') . '/js/local.js',
-    array(
-      'group' => JS_THEME,
-      'preprocess' => TRUE,
-      'weight' => '9998',
-      )
-    );
   $vars['scripts'] = drupal_get_js();
 
   // Use tertiary menus = true.

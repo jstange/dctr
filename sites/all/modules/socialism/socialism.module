@@ -1,0 +1,1301 @@
+<?php
+
+drupal_add_js(drupal_get_path('module', 'socialism') . '/js/socialism.js', array('type' => 'file', 'scope' => 'footer'));
+drupal_add_css(drupal_get_path('module', 'socialism') . '/css/socialism.css', array('group' => CSS_DEFAULT, 'type' => 'file'));
+
+function socialism_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+  if($form_id == "ad_campaign_node_form"){
+    unset($form['actions']['preview']);
+    unset($form['options']['promote']);
+    unset($form['options']['sticky']);
+    unset($form['comment_settings']);
+    unset($form['revision_information']);
+    unset($form['#metatags']);
+    $form['#action'] = preg_replace("/\\?.*/", "", $form['#action']);
+    $homeblock = block_load('block', '5');
+    $form['#prefix'] = drupal_render(_block_get_renderable_array(_block_render_blocks(array($homeblock))));
+    $form['#groups']['group_web']->label = "";
+    $form['#groups']['group_facebook']->label = "";
+    $form['field_web_ad_landing_page']['#suffix'] = "<div class='edit-field-web-ad-landing-page-und-0-value-msg'></div>";
+    $form['field_facebook_ad_landing_page']['#suffix'] = "<div class='edit-field-facebook-ad-landing-page-und-0-value-msg'></div>";
+
+    $launched = true;
+    $rows = array();
+
+    foreach (array('field_adroll_campaign_eid', 'field_adroll_facebook_campaign_e') as $field){
+      if(!empty($form[$field][LANGUAGE_NONE][0]['value']['#default_value'])){
+        list($start, $junk) = explode(" ", $form['field_dates'][LANGUAGE_NONE][0]['#default_value']['value']);
+        list($end, $junk) = explode(" ", $form['field_dates'][LANGUAGE_NONE][0]['#default_value']['value2']);
+        // XXX still not showing up for non-admin users
+        $row = _socialism_display_campaign(null, $form[$field][LANGUAGE_NONE][0]['value']['#default_value'], $start, $end);
+        if($row){
+          $rows[] = $row;
+        }
+      }
+    }
+    foreach($form['field_campaigns'][LANGUAGE_NONE]['#default_value'] as $type){
+      if($type == "Web" && empty($form['field_adroll_campaign_eid'][LANGUAGE_NONE][0]['value']['#default_value'])){
+        $launched = false;
+      } else if($type == "Facebook" && empty($form['field_adroll_facebook_campaign_e'][LANGUAGE_NONE][0]['value']['#default_value'])){
+        $launched = false;
+      }
+    }
+    if(count($form['field_campaigns'][LANGUAGE_NONE]['#default_value']) == 0){
+      $launched = false;
+    }
+    if(count($rows) > 0){
+      $thead = _socialism_campaign_table_head();
+      $form['adroll_table'] = array(
+        '#markup' => "<h3>Adroll Status</h3><table>".$thead.implode("\n", $rows)."</table>",
+        '#weight' => -100
+      );
+    }
+    if($launched){
+      $form['title']['#disabled'] = true;
+      $form['field_campaigns']['#disabled'] = true;
+      $form['field_dates']['#disabled'] = true;
+      $form['field_bid'][LANGUAGE_NONE]['value']['#disabled'] = true;
+      $form['field_web_ads']['#disabled'] = true;
+      $form['field_web_ad_landing_page']['#disabled'] = true;
+      $form['field_facebook_ads']['#disabled'] = true;
+      $form['field_facebook_ad_landing_page']['#disabled'] = true;
+      $form['field_facebook_button']['#disabled'] = true;
+      $form['field_facebook_placements']['#disabled'] = true;
+      $form['field_facebook_title']['#disabled'] = true;
+      $form['field_facebook_short_description']['#disabled'] = true;
+      $form['field_facebook_full_description']['#disabled'] = true;
+      if($user->uid != 1){
+        $form['actions']['submit']['#disabled'] = true;
+        unset($form['actions']['delete']);
+      }
+    }
+
+    if($user->uid != 1){
+      $form['field_adroll_campaign_eid']['#access'] = false;
+      $form['field_adroll_facebook_campaign_e']['#access'] = false;
+    }
+
+// XXX when this is opened up to regular users, make this a precondition for
+// the activation of the launch button:
+//      $form['field_kickoff_fee_paid'][LANGUAGE_NONE][whateveristrue];
+//    $form['actions']['submit']['#submit'][] = "_socialism_save_callback";
+    $form['#submit'][] = "_socialism_save_callback";
+
+    if($user->uid == 1){
+      if($form['nid']['#value']){
+        $form['actions']['launch'] = array(
+          '#type' => 'submit',
+          '#value' => t($launched ? "Already Launched" : "Launch"),
+          '#weight' => 100,
+          '#disabled' => $launched,
+          '#access' => ($user->uid == 1),
+          '#submit' => array("node_form_submit", "_socialism_launch_callback")
+        );
+      }
+    }
+  } else if($form_id == "user_profile_form") {
+    unset($form['#metatags']);
+  }
+}
+
+function socialism_flush_caches(){
+  return(array("cache_adroll"));
+}
+
+$segment_cache = array();
+function _socialism_get_segments($just_eids = true){
+  global $segment_cache;
+
+		list($start, $end) = _socialism_get_days_window();
+  /*
+    $params = array(
+      "variables" => null,
+      "operationName" => null,
+      "query" => "{ advertisable { byEID(advertisable: \""._socialism_get_advertisable_eid()."\") { eid name segments { eid name displayName mobile pattern type metrics(start: \"$start\", end: \"$end\", currency: \"USD\") { summary { impressions clicks cost totalVisitors bounceRate ctr conversions roi } } } } } }"
+    );
+    $results = _socialism_adroll_api_call("reporting/api", "query", null, $params, "POST");
+    dpm($results);
+*/
+
+  $audience_params = array(
+    "breakdowns" => "entity",
+    "past_days" => 90,
+    "advertisable_eid" => _socialism_get_advertisable_eid()
+  );
+  $eids = array();
+  if ($cache = cache_get("adroll_segments", "cache_adroll")) {
+    $segment_cache = $cache->data;
+  }
+  if(count($segment_cache) == 0 || time() > (int)$cache->expire){
+    $response = _socialism_adroll_api_call("api", "pixel", "get_segments", array("pixel" => variable_get('socialism_adroll_pixel_eid')));
+    if(!$response || !isset($response->results)){
+      return(null);
+    }
+    $segment_cache = array();
+    $allvisitors_eid = null;
+    foreach ($response->results as $segment){
+      if($segment->display_name == "All Visitors"){
+        $allvisitors_eid = $segment->eid;
+      }
+      $eids[] = $segment->eid;
+      $segment_cache[$segment->eid] = $segment;
+    }
+    $audience_params["segment_eids"] = implode(",", $eids);
+    $response = _socialism_adroll_api_call("uhura", "segment-deliveries", "segment", $audience_params);
+    if(!$response || !isset($response->results) || !isset($response->results->entity)){
+      return(null);
+    }
+
+    $allvisitors = 0;
+    foreach ($response->results->entity as $audience){
+      $allvisitors += $audience->all_visitors;
+      $segment_cache[$audience->entity]->visitors = $audience->visitors;
+      $segment_cache[$audience->entity]->revenue = $audience->revenue;
+      $segment_cache[$audience->entity]->all_visitors = $audience->all_visitors;
+      $segment_cache[$audience->entity]->all_revenue = $audience->all_revenue;
+    }
+    // the API no longer returns this count for some reason, so fake it
+    $segment_cache[$allvisitors_eid]->visitors = $allvisitors;
+
+    cache_set("adroll_segments", $segment_cache, "cache_adroll", time()+(3600*3));
+  } else {
+    $eids = array_keys($segment_cache);
+  }
+
+  if(!$just_eids){
+    return($segment_cache);
+  }
+
+  return($eids);
+}
+
+$ad_cache = array();
+function _socialism_ad_eid($name){
+  global $ad_cache;
+  if ($cache = cache_get("adroll_ads", "cache_adroll")) {
+    $ad_cache = $cache->data;
+  }
+  if(count($ad_cache) == 0 || time() > (int)$cache->expire){
+    $results = _socialism_adroll_api_call("api", "advertisable", "get_ads_fast", array("advertisable" => _socialism_get_advertisable_eid()));
+    if($results->results){
+      $ad_cache = $results->results;
+      cache_set("adroll_ads", $ad_cache, "cache_adroll", time()+86400);
+    }
+  }
+  if(!$name){
+    return(null);
+  }
+  foreach ($ad_cache as $ad){
+    if($ad->name == $name){
+      return($ad->eid);
+    }
+  }
+  return(null);
+}
+
+// XXX this should invalidate or update our cache
+function _socialism_create_ad($image, $url, $domain, $fb_button = null, $fb_headline = null, $fb_body = null, $fb_message = null){
+  global $ad_cache;
+  $file = file_load($image['fid']);
+  if(!$file){
+    // XXX throw a warning
+    return;
+  }
+  $eid = _socialism_ad_eid($file->filename);
+  if($eid){
+    return(array($file->filename, $eid));
+  }
+
+  $fhandle = fopen($file->uri, 'r');
+  $data = fread($fhandle, filesize($file->uri));
+  fclose($fhandle);
+// XXX none of this CurlPHP shit works, but it should.
+//  $mime = "image/jpeg";
+//  if(preg_match("/\.png/i", $file->uri)){
+//    $mime = "image/png";
+//  } else if(preg_match("/\.gif/i", $file->uri)){
+//    $mime = "image/gif";
+//  }
+//  $tmpfile = drupal_tempnam("", "adrollupload_");
+//  $tmpfile = "public://".preg_replace("/.*?\/?([^\/]+)$/", '\1', $tmpfile);
+//  file_copy($file, $tmpfile);
+//  $cFile = new \CurlFile(drupal_realpath($tmpfile), $mime, $file->filename);
+  $tracking = "?utm_source=adroll&utm_medium=adroll&utm_campaign=adroll";
+  if(!preg_match("/\/$/", $url)){
+    $url .= "/";
+  }
+  $params = array(
+    "advertisable" => _socialism_get_advertisable_eid(),
+    "destination_url" => $url.$tracking,
+    "tracking" => $tracking,
+    "name" => $file->filename,
+    "display_url_override" => $domain, // XXX seems to ignore this
+    "file" => "@".drupal_realpath($file->uri)
+//    "file" => "@".drupal_realpath($tmpfile),
+//    "file" => base64_encode($data),
+//    "file" => $cFile,
+//    "filesize" => filesize($file->uri),
+  );
+  if($fb_headline || $fb_body || $fb_message){
+    $params['headline'] = $fb_headline;
+    $params['body'] = $fb_body;
+    $params['message'] = $fb_message;
+    $params['call_to_action'] = $fb_button;
+  }
+
+  drupal_set_message("Uploading ad <strong>".$file->filename."</strong>");
+  $response = _socialism_adroll_api_call("api", "ad", "create", $params, "POST");
+  if($response && isset($response->results)){
+//    drupal_set_message("Upload of <strong>".$file->filename."</strong> succeeded");
+//    dpm($response);
+    _socialism_ad_eid(null); // make sure our ad cache is already populated
+    $ad_cache[] = $response->results;
+    return(array($file->filename, $response->results->eid));
+  } else {
+    $params['response'] = $response;
+    _socialism_mailer("adfail", null, $params);
+    drupal_set_message("Upload of <strong>".$file->filename."</strong> failed", "error");
+    drupal_set_message("Notifying <strong>".variable_get('site_mail', '')."</strong> for help", "error");
+    return(null);
+  }
+}
+
+function socialism_mail($key, &$message, $params){
+  global $base_url;
+  $options['language'] = $message['language'];
+  $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
+  $message['headers']['MIME-Version'] = '1.0';
+  $message['headers']['Content-Transfer-Encoding'] = '8bit';
+  $langcode = $message['language']->language;
+  switch($key) {
+    case 'launch':
+      $message['subject'] = "Campaign launched: ".$params['name'];
+      break;
+    case 'finalize':
+      $message['subject'] = "Ad campaign '".$params['name']."' completed";
+      $message['body'][] = t("<p>The total weekly upkeep cost for this campaign came to: \$".$params['cost']."</p>", array(), array('langcode' => $langcode));
+      $message['body'][] = t("<p>To view detailed reports of your campaign's performance, as well as pay off the balance for this campaign, log in at <a href='https://dctheatre.rocks'>https://dctheatre.rocks</a>.</p>", array(), array('langcode' => $langcode));
+      $message['body'][] = t("<p>When paying off your balance, note that you may need to scroll down to see Paypal's \"Pay with Debit or Credit Card\" option on their checkout screens. They try to hide it underneath their login box to trick you into making an account, if you don't already have one. You don't have to!</p>", array(), array('langcode' => $langcode));
+      $message['body'][] = t("<p>Just a reminder: we're not taking anything off the top here. Every dime goes into running your ad campaigns. The final upkeep total above doesn't include the campaign startup cost used to kick it off, and it can also be slightly above or below the original estimated upkeep ($50.00) if your campaign performed very well, generating more clicks than expected, or if it struggled, generating fewer. If it cost a little more, that's a good thing!</p>", array(), array('langcode' => $langcode));
+      $message['body'][] = t("<p>For more about the intricacies of Adroll's pricing structure: <a href='https://help.adroll.com/hc/en-us/articles/211842678-Pricing'>https://help.adroll.com/hc/en-us/articles/211842678-Pricing</a>.</p>", array(), array('langcode' => $langcode));
+      break;
+    case 'stuck':
+      unset($params['budget']);
+      $message['subject'] = "Campaign looks stuck: ".$params['name'];
+      $message['body'][] = t("<pre>".print_r($params, true)."</pre>", array(), array('langcode' => $langcode));
+      break;
+    case 'reportfail':
+      $message['subject'] = "Campaign report failed to download: ".$params['name'];
+      $message['body'][] = t("<pre>".print_r($params, true)."</pre>", array(), array('langcode' => $langcode));
+      break;
+    case 'adfail':
+      $message['subject'] = "Ad failed to upload: ".$params['name'];
+      $message['body'][] = t("<pre>".print_r($params, true)."</pre>", array(), array('langcode' => $langcode));
+      break;
+    case 'launchfail':
+      $message['subject'] = "Campaign launch failed: ".$params['name'];
+      $message['body'][] = t("<pre>".print_r($params, true)."</pre>", array(), array('langcode' => $langcode));
+      break;
+  }
+  if($params['start_date']){
+    if(!$params['end_date']){
+      $params['end_date'] = "ONGOING";
+    }
+    $message['body'][] = t("<p><strong>Run Dates:</strong> ".$params['start_date']." - ".$params['end_date']."<br/>", array(), array('langcode' => $langcode));
+  }
+  if($params['budget']){
+    $message['body'][] = t("<strong>Weekly budget:</strong> \$".$params['budget']."</p>", array(), array('langcode' => $langcode));
+  }
+  if($params['url']){
+    $message['body'][] = t("<p><a href='$base_url/".$params['url']."'>View your campaign</a></p>", array(), array('langcode' => $langcode));
+  }
+  if($params['ads'] && count($params['ads'])){
+     $message['body'][] = t("<strong>Ads:</strong><ul>", array(), array('langcode' => $langcode));
+    foreach ($params['ads'] as $adname){
+       $message['body'][] = t("<li> $adname<br/><img src='$base_url/sites/default/files/".urlencode($adname)."'>", array(), array('langcode' => $langcode));
+    }
+    $message['body'][] = t("</ul>", array(), array('langcode' => $langcode));
+  }
+}
+
+function _socialism_mailer($reason = "launch", $owner, $params){
+  global $user;
+  if (!$owner){
+    $owner = user_load($user->uid);
+  }
+  $site_mail = variable_get('site_mail', '');
+  $recips = array($owner->mail, $site_mail);
+	if(isset($owner->field_email_contacts) && $owner->field_email_contacts[LANGUAGE_NONE]){
+  	foreach ($owner->field_email_contacts[LANGUAGE_NONE] as $contact){
+	    $recips[] = $contact['email'];
+	  }
+	}
+  $to = implode(", ", array_unique($recips));
+  if($params['status'] == "draft"){
+    $to = $site_mail;
+  }
+  if($reason == "launchfail" || $reason == "adfail" || $reason == "reportfail" || $reason == "stuck"){
+    // Notify me by email if a campaign launch fails
+    drupal_mail("socialism", $reason, $site_mail, language_default(), $params, $site_mail, true);
+  } else {
+    drupal_mail("socialism", $reason, $to, language_default(), $params, $site_mail, true);
+  }
+}
+
+function _socialism_launch_callback($form, &$form_state){
+  global $user;
+  $draft = false;
+$draft = true;
+  $owner = user_load($form_state['values']['uid']); // the button doesn't exist until the thing's been saved, so this should be safe
+
+  $node = node_load($form_state['values']['nid']);
+  foreach ($form_state['input']['field_campaigns'][LANGUAGE_NONE] as $type){
+    if(empty($type)){
+      continue;
+    }
+
+    $name = $owner->field_company_website[LANGUAGE_NONE][0]['title']." - ".$form_state['input']['title']." - ".$type;
+    $domain = preg_replace("/^(?:https?:\/\/)?.*?([^\.]+\.[^\.\/]+)(?:\/.*|$)/", '\1', $owner->field_company_website[LANGUAGE_NONE][0]['url']);
+    $ads = array();
+    foreach ($form_state['input']['field_'.strtolower($type).'_ads'][LANGUAGE_NONE] as $image){
+
+      if($image['fid'] > 0){
+        if($type == "Web"){
+          list($ad_name, $ad_eid) = _socialism_create_ad(
+            $image,
+            $form_state['input']['field_'.strtolower($type).'_ad_landing_page'][LANGUAGE_NONE][0]['value'],
+            $domain
+          );
+          if($ad_name && $ad_eid){
+            $ads[$ad_name] = $ad_eid;
+          }
+        } else if ($type == "Facebook"){
+          list($ad_name, $ad_eid) = _socialism_create_ad(
+            $image,
+            $form_state['input']['field_'.strtolower($type).'_ad_landing_page'][LANGUAGE_NONE][0]['value'],
+            $domain,
+            $form_state['input']['field_facebook_button'][LANGUAGE_NONE],
+            $form_state['input']['field_facebook_title'][LANGUAGE_NONE][0]['value'],
+            $form_state['input']['field_facebook_short_description'][LANGUAGE_NONE][0]['value'],
+            preg_replace("/(?:([^\w\s])[^\w\s]+)|(?:(\s)\s+)/", '\1\2', $form_state['input']['field_facebook_full_description'][LANGUAGE_NONE][0]['value'])
+          );
+          if($ad_name && $ad_eid){
+            $ads[$ad_name] = $ad_eid;
+          }
+        }
+      }
+    } // ad creation loop end
+
+    if(count($ads) == 0){
+      drupal_set_message("$type campaign did not have any ads to run, not submitting to Adroll", "error");
+    } else {
+      watchdog("adroll", "Submitting $type campaign to Adroll with these ads: <Strong>".implode(", ", array_keys($ads))."</strong>");
+      drupal_set_message("Submitting $type campaign to Adroll with these ads: <strong>".implode(", ", array_keys($ads))."</strong>");
+      list($s_month, $s_day, $s_year) = explode("/", $form_state['input']['field_dates'][LANGUAGE_NONE][0]['value']['date']);
+      list($e_month, $e_day, $e_year) = explode("/", $form_state['input']['field_dates'][LANGUAGE_NONE][0]['value2']['date']);
+
+      $params = array(
+        "advertisable" => _socialism_get_advertisable_eid(),
+        "name" => preg_replace("/'/", "&apos;", $name),
+        "start_date" => "$s_year-$s_month-$s_day",
+        "end_date" => "$e_year-$e_month-$e_day",
+        "is_retargeting" => true, // apparently mutex w/geo in adgroups?
+        "budget" => intval($form_state['input']['field_bid'][LANGUAGE_NONE]['value']['value'])
+      );
+      if($draft){
+        $params["status"] = "draft";
+      }
+      if($type == "Facebook"){
+        $params["is_fbx_newsfeed"] = true;
+        $params["networks"] = "f";
+      }
+
+      // Now actually create the campaign
+      $response = _socialism_adroll_api_call("api", "campaign", "create", $params, "POST");
+      $params['ads'] = array_keys($ads);
+      $params['url'] = url(current_path());
+      if(!$response or !isset($response->results)){
+        drupal_set_message("Failed to launch $type campaign <strong>$name</strong>", "error");
+        drupal_set_message("Notifying <strong>".variable_get('site_mail', '')."</strong> for help", "error");
+        _socialism_mailer("launchfail", $owner, $params);
+        continue;
+      } else {
+        _socialism_mailer("launch", $owner, $params);
+      }
+
+      // make sure our next listing of campaign reports will be fresh
+      cache_clear_all("adroll_campaigns", "cache_adroll");
+
+      $save_eid = array(
+        LANGUAGE_NONE => array(
+          0 => array(
+            'value' => $response->results->eid
+          )
+        )
+      );
+
+      if($type == "Web"){
+        $node->field_adroll_campaign_eid = $save_eid;
+      } else {
+        $node->field_adroll_facebook_campaign_e = $save_eid;
+      }
+
+      $params = array(
+        "campaign" => $response->results->eid,
+        // [{“country_id”:19,”eid”:”YD2QNVI2GVH4DP4TIO8GEO”,”is_negative”:false}, {“region_id”:”USCA”,”eid”:”FPDT2YVTEZG3LNMQ5Q8GEO”,”is_negative”:false}]
+//          "geo_targets" => "eh", // XXX apparently non-functional; I set DC Metro in the UI all the time, but those ad groups show no geo targeting from the API
+        "name" => $name,
+        "ads" => implode(",", array_values($ads)),
+        "positive_segments" => implode(",", _socialism_get_segments())
+      );
+
+      if($type == "Facebook"){
+        $placements = array();
+        foreach ($form_state['input']['field_facebook_placements'][LANGUAGE_NONE] as $spot){
+          if(!empty($spot)){
+            $placements[] = $spot;
+          }
+        }
+        if(count($placements) == 0){
+          $placements[] = "all";
+        }
+        $params['placement_targets'] = json_encode($placements);
+        // XXX doesn't look like it's honoring this
+      }
+      $response = _socialism_adroll_api_call("api", "adgroup", "create", $params, "POST");
+//      dpm("ADGROUP CREATE RESPONSE");
+//      dpm($response);
+      /* XXX ...and these requests get a 500 back atm, so eff that workaround
+      if($response && isset($response->results) && $type == "Facebook"){
+        $group_eid = $response->results->eid;
+        foreach ($form_state['input']['field_facebook_placements'][LANGUAGE_NONE] as $spot){
+          if(!empty($spot)){
+            $params = array(
+              "adgroup" => $group_eid,
+              "placement" => $spot
+            );
+            $response = _socialism_adroll_api_call("api", "adgroup", "add_placement_target", $params, "PUT");
+          }
+        }
+      }
+       */
+    }
+  }
+
+  if(!$draft){
+    node_save($node);
+  }
+  $dest = url(current_path());
+
+  unset($_REQUEST['destination']); 
+  unset($form['#redirect']); 
+
+  $form_state['redirect'] = $dest;
+  $form['#redirect'] = $dest;
+  drupal_goto($dest);
+}
+
+function _socialism_campaign_table_head(){
+  return("<tr><th>Campaign</th><th>Click Rate</th><th>Spend-to-date</th><th>Run Dates</th><th>Adroll Status</th></tr>");
+}
+
+function _socialism_get_days_window($days = 90, $starttime = 0){
+  $start = time() - ($days*86400);
+	if($starttime > 0){
+		$start = $starttime;
+	}
+	$end = time();
+	return(array(date("Y-m-d", $start), date("Y-m-d", $end)));
+}
+
+function _socialism_get_campaign_report($eid, $past_days = 90, $starttime = 0){
+	list($start, $end) = _socialism_get_days_window($past_days, $starttime);
+  $params = array(
+    "variables" => null,
+    "operationName" => null,
+    "query" => "{ campaign { byEID(campaign: \"$eid\") { eid name budget createdDate startDate endDate channel status metrics(start: \"$start\", end: \"$end\", currency: \"USD\") { summary { impressions clicks cost viewThroughs clickThroughs viewRevenue clickRevenue } } } } }"
+  );
+
+  $results = _socialism_adroll_api_call("reporting/api", "query", null, $params, "POST");
+	return($results->data->campaign->byEID);
+}
+
+$report_cache = array();
+function _socialism_display_campaign($c = null, $eid = null, $start = null, $end = null, $details = true){
+  global $report_cache;
+  global $user;
+  if ($cache = cache_get("adroll_campaigns", "cache_adroll")) {
+    $report_cache = $cache->data;
+  }
+  if($eid &&
+     (!array_key_exists($eid, $report_cache) ||
+      time() > (int)$cache->expire ||
+      !isset($report_cache[$eid]->SOCIALISM_REPORTSTART) ||
+      $report_cache[$eid]->SOCIALISM_REPORTSTART > strtotime($start)
+     )
+  ){
+    $params = array("campaigns" => $eid, "data_format" => "entity");
+		$past_days = 90;
+    if(($start || $end) && strtotime($start) > 0){
+      $breadth = time() - strtotime($start);
+      $past_days = ceil($breadth/86400);
+			$start = strtotime($start);
+    } else {
+			$start = time() - 90*86400;;
+		}
+
+		$c = _socialism_get_campaign_report($eid, $past_days, $start);
+		if(!$c){
+      return(null);
+		}
+
+    if($c){
+      $c->SOCIALISM_REPORTSTART = strtotime($start);
+      $report_cache[$c->eid] = $c;
+      foreach ((array)$report_cache[$c->eid]->metrics->summary as $k => $v){
+        $report_cache[$c->eid]->{$k} = $v;
+				$c->{$k} = $v;
+      }
+      unset($report_cache[$c->eid]->metrics);
+
+      // if the cache was otherwise empty, make sure it's also populated with
+      // our usual stuff
+      // TODO
+
+//      cache_set("adroll_campaigns", $report_cache, "cache_adroll", time()+3600);
+    } else {
+      return(null);
+    }
+  } else if(!$c){
+    return(null);
+  }
+  if(!$details && $c->status != "approved" && $c->status != "completed" && $c->status != "ended" && $response->status != "running"){
+    return("");
+  }
+
+  $output = "";
+  $name = html_entity_decode(isset($c->campaign) ? $c->campaign : $c->name);
+  preg_match('/ - ([^-]*)$/', $name, $matches);
+  $type = $matches[1];
+  preg_match('/^([^-]*)( - |$)/', $name, $matches);
+  $company = $matches[1];
+  $img = "";
+  if($type == "Facebook"){
+    $img = '<img class="adroll-inline-icon" src="/'.drupal_get_path('module', 'socialism').'/images/fb.png">';
+  }
+  if($details){
+    $output .= "<tr class='adroll-$c->status'>";
+  } else {
+    $output .= "<tr>";
+  }
+  if($user->uid == 1){
+//  $deets = _socialism_adroll_api_call("api", "campaign", "get_adgroups", array("campaign" => $c->eid));
+//  dpm($deets);
+    $output .= "<td><a href='https://app.adroll.com/dashboard/campaign/".$c->eid."'>$img ".$name."</a></td>";
+  } else {
+    $output .= "<td>$img ".$name."</td>";
+  }
+  if($details){
+    if($c->impressions > 0){
+      $output .= "<td class='adroll-digits'>".sprintf("%.2f", 100*($c->clicks/$c->impressions))."% (<sup>".number_format($c->clicks)."</sup>/<sub>".number_format($c->impressions)."</sub>)</td>";
+    } else {
+      $output .= "<td class='adroll-digits'><em>0 impressions</em></td>";
+    }
+    $output .= "<td class='adroll-digits'>$".sprintf("%.2f", $c->cost)."</td>";
+  } else {
+    $output .= "<td class='adroll-digits'>[private]</td><td class='adroll-digits'>[private]</td>";
+  }
+  $output .= "<td>";
+  $output .= date("n/j/Y - ", strtotime($c->startDate));
+  if($c->endDate){
+    $output .= date("n/j/Y", strtotime($c->endDate));
+   } else {
+    $output .= "ongoing";
+  }
+  $output .= "</td>";
+  if($details){
+    $output .= "<td>".$c->status."</td>";
+  } else {
+    $output .= "<td>[private]</td>";
+  }
+  $output .= "</tr>\n";
+  return($output);
+}
+
+function _socialism_sort_reports($a, $b){
+  if((!isset($a->endDate) && !isset($b->endDate)) || $a->endDate == $b->endDate){
+    return($b->startDate <=> $a->startDate);
+  } else if($a->endDate && $b->endDate){
+    return($b->endDate <=> $a->endDate);
+  } else if(!$a->endDate){
+    if(time() > strtotime($b->endDate)){
+      return(-1);
+    } else {
+      return(1);
+    }
+  } else {
+    if(time() > strtotime($a->endDate)){
+      return(1);
+    } else {
+      return(-1);
+    }
+  }
+}
+
+$report_cache = array();
+function _socialism_list_adroll_campaigns($returnraw = false){
+  global $user;
+  global $report_cache;
+
+  if ($cache = cache_get("adroll_campaigns", "cache_adroll")) {
+    $report_cache = $cache->data;
+  }
+
+  if(count($report_cache) == 0 || time() > (int)$cache->expire){
+		list($start, $end) = _socialism_get_days_window();
+    $params = array(
+      "variables" => null,
+      "operationName" => null,
+      "query" => "{ advertisable { byEID(advertisable: \""._socialism_get_advertisable_eid()."\") { eid name campaigns { eid name budget createdDate startDate endDate channel status metrics(start: \"$start\", end: \"$end\", currency: \"USD\") { summary { impressions clicks cost totalVisitors bounceRate ctr conversions roi } } } } } }"
+    );
+    $results = _socialism_adroll_api_call("reporting/api", "query", null, $params, "POST");
+    $report_cache = array();
+    foreach ($results->data->advertisable->byEID->campaigns as $c){
+			if($c->endDate && strtotime($c->endDate) < (time()-90*86400) || $c->status == "draft"){
+				continue;
+			}
+      $report_cache[$c->eid] = $c;
+      if($c->status == "rejected"){
+        $c->endDate = $c->startDate;
+      }
+  //    print_r($report_cache[$c->eid]);
+      foreach ((array)$report_cache[$c->eid]->metrics->summary as $k => $v){
+        $report_cache[$c->eid]->{$k} = $v;
+      }
+      unset($report_cache[$c->eid]->metrics);
+    }
+
+    cache_set("adroll_campaigns", $report_cache, "cache_adroll", time()+3600);
+  }
+
+  $campaigns = array_values($report_cache);
+  if(!$campaigns){
+    watchdog("adroll", "Failed to fetch campaigns", "error");
+    return("");
+  }
+  uasort($campaigns, "_socialism_sort_reports");
+  if($returnraw){
+    return($campaigns);
+  }
+
+  $output = "<table class='adroll-campaigns'>"._socialism_campaign_table_head();
+  $count = 0;
+  foreach ($campaigns as $c){
+    $details = true;
+    if($user->uid != 1){
+      $details = false;
+
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', "ad_campaign")
+        ->propertyCondition('status', NODE_PUBLISHED)
+        ->fieldCondition('field_adroll_campaign_eid', 'value', $c->eid, '=');
+      $result = $query->execute();
+
+      if (isset($result['node']) && is_array($result['node'])) {
+        $nid = array_pop(array_keys($result['node']));
+        $node = node_load($nid);
+        if($node->uid == $user->uid || $user->uid == 1){  
+          if($node->field_adroll_campaign_eid[LANGUAGE_NONE][0]['value'] == $c->eid){
+            $details = true;
+          }
+        }
+      }
+//      if(!$found){
+//        continue;
+//      }
+    }
+    if(strtotime($c->startDate) < time()-(86400*90)){
+      $output .= _socialism_display_campaign($c, $c->eid, date("Y-m-d", strtotime($c->start_date)), date("Y-m-d", strtotime($c->endDate)), $details);
+    } else {
+      $output .= _socialism_display_campaign($c, null, null, null, $details);
+    }
+    $count++;
+  }
+  $output .= "</table>";
+  if($count == 0){
+    $output = "<p><em>No currently active campaigns</em></p>";
+  }
+
+  $output .= "<h3 class='socialism-adroll-toggle'>Get Adroll Javascript Code &#9654;</h3>";
+  $output .= "<p class='socialism-adroll-pixel'>This is the chunk of code that must be embedded in your site in order to runs ads linking to it. Check out <a href='/faq'>the FAQ</a> for more information.</p>";
+  $output .= "<pre class='socialism-adroll-pixel'>";
+  $output .= _socialism_get_pixel_code();
+  $output .= "</pre>";
+
+  return($output);
+}
+
+/*
+ * Fetch that little wad of Javascript people have to embed in their pages.
+ */
+function _socialism_get_pixel_code(){
+  if ($cache = cache_get("adroll_pixel", "cache_adroll")) {
+    return($cache->data);
+  }
+  if(variable_get('socialism_adroll_pixel_eid')){
+    $pixel = _socialism_adroll_api_call("api", "pixel", "get", array("pixel" => variable_get('socialism_adroll_pixel_eid')));
+    cache_set("adroll_pixel", $pixel->results->code, "cache_adroll");
+    return($pixel->results->code);
+  } else {
+    return(null);
+  }
+}
+
+/*
+ * Block configuration for our generic campaign list table.
+ */
+function socialism_block_info() {
+  $blocks['current_adroll_campaigns'] = array(
+    'info' => t('Adroll Campaigns Active in Last 90 Days'),
+    'cache' => DRUPAL_CACHE_PER_USER,
+  );
+  $blocks['adroll_segments_table'] = array(
+    'info' => t('Retargeting Pool'),
+    'cache' => DRUPAL_CACHE_PER_USER,
+  );
+  return $blocks;
+}
+
+function _socialism_sort_by_audience($a, $b){
+  return($b->visitors <=> $a->visitors);
+}
+
+function _socialism_adroll_segments_view($top = 5){
+  global $user;
+  $owner = user_load($user->uid);
+
+  $all_owners = entity_load('user');
+  $eid_to_url = array();
+  $mine = array();
+  foreach ($all_owners as $acct){
+    if(isset($acct->field_segments[LANGUAGE_NONE])){
+      foreach($acct->field_segments[LANGUAGE_NONE] as $s_desc){
+        if(isset($s_desc['title'])){
+          $eid_to_url[$s_desc['title']] = $s_desc['url'];
+          if($owner->uid == $acct->uid){
+            $mine[$s_desc['title']] = $s_desc['url'];
+          }
+        }
+      }
+    }
+  }
+
+
+  $segments = _socialism_get_segments(false);
+  $toptable = "<p class='adroll-caption'>Top Participating Sites</p><table class='socialism-audience'><tr><th>Site</th><th>Visitors</th></tr>";
+  $mystuff = "";
+  $total = "";
+
+  uasort($segments, "_socialism_sort_by_audience");
+
+//  $toptable .= "<pre>".print_r($eid_to_url, true)."</pre>";
+
+  $seen = 1;
+//  if(isset($owner->field_company_website[LANGUAGE_NONE][0]['url']) &&
+//     !empty($owner->field_company_website[LANGUAGE_NONE][0]['url'])){
+    foreach ($segments as $s){
+      if(empty($s->pattern)){
+        continue;
+      } else if($s->display_name == "All Visitors"){
+        $total = "<p class='adroll-pooltotal'><strong>Current pool size</strong>: <span class='adroll-digits'>".number_format($s->visitors)."</span> visitors</p>";
+        continue;
+      }
+      $namehtml = "";
+      if(array_key_exists($s->eid, $eid_to_url)){
+        $namehtml = "<strong><a href='".$eid_to_url[$s->eid]."' target='_blank'>$s->display_name</a>";
+      } else {
+        $namehtml = "<strong>$s->display_name";
+      }
+      if($s->type == "c"){
+        $namehtml .= " ($ conversion URL $)";
+      }
+      $namehtml .= "</strong>";
+      if($seen <= $top){
+        if(array_key_exists($s->eid, $mine)){
+          $toptable .= "<tr class='adroll-mine'>";
+        } else {
+          $toptable .= "<tr>";
+        }
+        $toptable .= "<td>$seen. $namehtml</td><td class='adroll-digits'>".number_format($s->visitors)."</td></tr>";
+        $lastprinted = $seen;
+      } else {
+        $url_re = preg_replace("/\//", "\\/", preg_replace('/\\\\\*/', ".*?", preg_quote($s->pattern)));
+        if(array_key_exists($s->eid, $mine) || 
+          (isset($owner->field_company_website[LANGUAGE_NONE]) &&
+            preg_match("/".$url_re."/", $owner->field_company_website[LANGUAGE_NONE][0]['url'])
+          )){
+          if($seen > $lastprinted+1 ){
+            $toptable .= "<tr><td colspan=2>...</td></tr>";
+          }
+          $toptable .= "<tr class='adroll-mine'><td>$seen. $namehtml</td><td class='adroll-digits'>".number_format($s->visitors)."</td></tr>";
+          $lastprinted = $seen;
+        }
+      }
+      $seen++;
+    }
+//  }
+
+
+  $toptable .= "</table>";
+
+  return($total.$toptable);
+}
+
+/*
+ * Insert block configuration for our generic campaign list table into hook_block_view.
+ */
+function socialism_block_view($delta){
+  if($delta == "current_adroll_campaigns"){
+    return(array(
+      "subject" => t("Adroll Campaigns Active, Past 90 Days"),
+      "content" => _socialism_list_adroll_campaigns()
+    ));
+  } else if($delta == "adroll_segments_table"){
+    return(array(
+      "subject" => t("Retargeting Pool, Past 90 Days"),
+      "content" => _socialism_adroll_segments_view(5)
+    ));
+  }
+}
+
+/*
+ * Used by our AJAX url tester to validate URLs that end users put as landing
+ * pages for ads.
+ */
+function _socialism_fetch_landing_url($url){
+  if(!$url){
+    return(null);
+  }
+  $result = drupal_http_request(urldecode($url));
+  if($result->code != 200){
+    watchdog("socialism", "URL test of ".urldecode($url)." returned ".$result->code."\n<pre>\n".print_r($result, true)."</pre>");
+    header("HTTP/1.1 403 ", true, 403);
+  } else {
+    print $result->data;
+  }
+}
+
+function _socialism_fetch_landing_url_from_php($url){
+  $result = drupal_http_request(urldecode($url));
+  if($result->code != 200){
+    watchdog("socialism", "URL test of ".urldecode($url)." returned ".$result->code."\n<pre>\n".print_r($result, true)."</pre>");
+    return(null);
+  } else {
+    watchdog("socialism", "URL test of ".urldecode($url)." returned ".$result->code."\n<pre>\n".print_r($result, true)."</pre>");
+    return($result->data);
+  }
+}
+function socialism_menu() {
+  $items = array();
+  $items['fetch-landing-url'] = array(
+    'title' => "Fetch a landing URL and test for the presence of Adroll's JS",
+    'page callback' => '_socialism_fetch_landing_url',
+    'page arguments' => array(1),
+    'access arguments' => array("create ad_campaign content"),
+    'type' => MENU_CALLBACK
+  );
+  $items['admin/config/services/adroll-api'] = array(
+    'title' => 'Adroll API',
+    'weight' => -100,
+    'description' => 'Communication settings for interaction with the Adroll API',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('socialism_admin'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer nodes'),
+    'type' => MENU_NORMAL_ITEM
+  );
+  return($items);
+}
+
+function _socialism_get_advertisable_eid($usecache = true){
+  if(empty(variable_get('socialism_adroll_advertisable_eid')) || !$usecache){
+    $adv_name = variable_get('socialism_adroll_advertisable');
+    if($adv_name){
+      $results = _socialism_adroll_api_call("api", "organization", "get_advertisables");
+      foreach ($results->results as $advertisable){
+        if($adv_name == $advertisable->name){
+          variable_set('socialism_adroll_advertisable_eid', $advertisable->eid);
+          return($advertisable->eid);
+        }
+      }
+    } else {
+      return(null);
+    }
+  } else {
+    return(variable_get('socialism_adroll_advertisable_eid'));
+  }
+}
+
+function socialism_admin(){
+  $form['socialism_adroll_dashboard_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Adroll Dashboard Username'),
+    '#default_value' => variable_get('socialism_adroll_dashboard_username'),
+    '#description' => t(""),
+    '#required' => TRUE
+  );
+  $form['socialism_adroll_dashboard_password'] = array(
+    '#type' => 'password',
+    '#title' => t('Adroll Dashboard Password'),
+    '#default_value' => variable_get('socialism_adroll_dashboard_password'),
+    '#description' => t(""),
+    '#required' => TRUE
+  );
+  $form['socialism_adroll_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Adroll API Key'),
+    '#default_value' => variable_get('socialism_adroll_api_key'),
+    '#description' => t(""),
+    '#required' => TRUE
+  );
+  $form['socialism_adroll_pixel_eid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Adroll Pixel EID'),
+    '#default_value' => variable_get('socialism_adroll_pixel_eid'),
+    '#description' => t(""),
+    '#required' => FALSE
+  );
+  $form['socialism_adroll_advertisable'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Adroll Profile'),
+    '#default_value' => variable_get('socialism_adroll_advertisable'),
+    '#description' => t(""),
+    '#required' => FALSE
+  );
+  return(system_settings_form($form));
+}
+
+function _socialism_adroll_api_call($api = "api", $section, $call, $params = array(), $method = "GET"){
+  // create curl resource
+  $ch = curl_init();
+
+  // set url
+  $apikey = variable_get('socialism_adroll_api_key');
+  if(!empty($call)){
+    $base_url = "https://services.adroll.com/$api/v1/$section/$call";
+    $url = "https://services.adroll.com/$api/v1/$section/$call?apikey=$apikey";
+  } else {
+    $base_url = "https://services.adroll.com/$api/v1/$section";
+    $url = "https://services.adroll.com/$api/v1/$section?apikey=$apikey";
+  }
+  $data = "";
+  if(count($params) > 0){
+    foreach($params as $key => $val){
+      if($method == "GET"){
+        $data .= "&".urlencode($key)."=".urlencode($val);
+      }
+    }
+  }
+  $headers = array("Accept: */*");
+  $credentials = variable_get('socialism_adroll_dashboard_username').":".variable_get('socialism_adroll_dashboard_password');
+  curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+  curl_setopt($ch, CURLOPT_USERPWD, $credentials);
+  if($method == "GET"){
+    $url .= $data;
+  } else if($method == "PUT"){
+// XXX yet another thing that bombs with PHP Curl; nag Adroll about the 500s
+//    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+//    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+  } else if ($method == "POST"){
+    /*
+    if(array_key_exists("file", $params)){
+      $headers[] = "Content-Type: multipart/form-data";
+      if(array_key_exists("filesize", $params)){
+        curl_setopt($ch,CURLOPT_INFILESIZE, $params['filesize']);
+      }
+      curl_setopt($ch,CURLOPT_SAFE_UPLOAD, 1);
+    }
+    curl_setopt($ch,CURLOPT_POST, 1);
+    curl_setopt($ch,CURLOPT_POSTFIELDS, $params);
+     */
+    // XXX Run curl from the command-line because nothing involving PHP-curl
+    // and file uploads seems to work.
+    $cmdlineparams = array();
+    $credentials = urlencode(variable_get('socialism_adroll_dashboard_username')).":".urlencode(variable_get('socialism_adroll_dashboard_password'));
+    $cmd = "";
+
+    if($api == "reporting/api"){
+      foreach ($params as $key => $val){
+        $cmdlineparams[] = "--data-raw $key='$val'";
+      }
+      $cmd = "/usr/bin/curl 'https://$credentials@services.adroll.com/$api/v1/$section?apikey=$apikey' ".implode(" ", $cmdlineparams);
+    } else {
+      foreach ($params as $key => $val){
+        $cmdlineparams[] = "-F $key='$val'";
+      }
+      $cmd = "/usr/bin/curl 'https://$credentials@services.adroll.com/$api/v1/$section/$call?apikey=$apikey' ".implode(" ", $cmdlineparams);
+    }
+dpm($cmd);
+
+//drush_log($cmd, "ok");
+//echo $cmd;
+    $output = shell_exec($cmd);
+    $json = json_decode($output);
+    if(isset($json->errors)){
+      foreach ($json->errors as $err){
+        drupal_set_message("Got '".$err->message."' while ${method}ing Adroll API endpoint $section/$call", "warning");
+      }
+      watchdog("adroll", "$url<pre>\n".print_r($json, true)."</pre>", array(), WATCHDOG_ERROR);
+      return(null);
+    }
+
+    return($json);
+    // XXX end incredibly stupid workaround
+  }
+dpm($url);
+//drush_log($url, "ok");
+if(count($params) > 0){
+dpm($params);
+//drush_log(print_r($params, true), "ok");
+}
+  curl_setopt($ch, CURLOPT_URL, $url);
+//  curl_setopt($ch, CURLOPT_HEADER, 1);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+  $output = curl_exec($ch);
+  $response = curl_getinfo($ch);
+
+  if($response['http_code'] >= 500 || empty($output)){
+    drupal_set_message("Got HTTP ".$response['http_code']." from $base_url ($method)", "error");
+dpm($response);
+//drush_log(print_r($response, true), "ok");
+    watchdog("adroll", $response['http_code']." from $url\n<pre>".print_r($response, true)."</pre>", array(), WATCHDOG_ERROR);
+    if(empty($output)){
+      return(null);
+    } else {
+dpm($output);
+    }
+  }
+
+  $json = json_decode($output);
+  if(empty($json)){
+    watchdog("adroll", "Failed to parse JSON from response at $base_url ($method)<pre>\n$output</pre>", array(), WATCHDOG_ERROR);
+    drupal_set_message("Failed to parse JSON from response at $base_url ($method)", "error");
+dpm($response);
+dpm($output);
+    return($output);
+  }
+
+  if(isset($json->errors) || $response['http_code'] >= 400){
+    drupal_set_message("Got errors back from $base_url ($method)", "warning");
+    if(isset($json->errors)){
+      foreach ($json->errors as $err){
+        drupal_set_message("<strong><pre>".$err->message."</pre></strong>", "warning");
+      }
+      watchdog("adroll", "Got JSON errors from $url<pre>\n".print_r($json, true)."</pre>", array(), WATCHDOG_ERROR);
+    } else if(isset($json->message)){
+      drupal_set_message("<pre>".$json->message."</pre>", "warning");
+      watchdog("adroll", "Got JSON errors from $url<pre>\n".print_r($json, true)."</pre>", array(), WATCHDOG_ERROR);
+    } else {
+      drupal_set_message("<strong>".$output."</strong>", "warning");
+      watchdog("adroll", "Got errors from $url<pre>\n".print_r($output, true)."</pre>", array(), WATCHDOG_ERROR);
+    }
+//    dpm($response);
+    return(null);
+  }
+
+  return($json);
+}
+
+function _socialism_check_for_stuck_campaigns(){
+  $campaigns = _socialism_list_adroll_campaigns(true);
+  foreach ($campaigns as $c){
+    if($c->status != "running" || $c->impressions > 0){
+      continue;
+    }
+    $start = strtotime($c->startDate);
+    if($start < time()-(1.5*86400)){
+//      drush_log("Adroll: $c->name at 0 impressions", "warning");
+      $c->url = "https://app.adroll.com/dashboard/campaign/".$c->eid;
+      _socialism_mailer("stuck", null, (array)$c);
+    }
+  }
+}
+
+function _socialism_finish_campaigns(){
+  $q = new EntityFieldQuery();
+  $q->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', "ad_campaign")
+    ->propertyCondition('status', NODE_PUBLISHED)
+    ->fieldCondition('field_adroll_campaign_eid', 'value', NULL, 'IS NOT NULL');
+  // XXX or field_adroll_facebook_campaign_e
+  $campaigns = $q->execute();
+
+  if (isset($campaigns['node']) && is_array($campaigns['node'])) {
+    foreach($campaigns['node'] as $n){
+      $q = new EntityFieldQuery();
+      $q->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', "campaign_report")
+        ->propertyCondition('status', NODE_PUBLISHED)
+        ->fieldCondition('field_source_campaign', 'target_id', $n->nid, '=');
+      $reports = $q->execute();
+      // there's already a report
+      if (isset($reports['node']) && is_array($reports['node'])) {
+        continue;
+      }
+      $campaign = node_load($n->nid);
+      $campaign_eids = array();
+
+      if (isset($campaign->field_adroll_campaign_eid[LANGUAGE_NONE])){
+        $eid = $campaign->field_adroll_campaign_eid[LANGUAGE_NONE][0]['value'];
+//        $response = _socialism_adroll_api_call("api", "campaign", "get", array("campaign"=> $eid));
+				$response = _socialism_get_campaign_report($eid, $past_days = 90, $starttime = 0);
+        if($response){
+          if($response->status == "completed" || $response->status == "ended"){
+            $campaign_eids[] = $eid;
+          } elseif($response->status == "approved" || $response->status == "running") {
+            print "$campaign->title is still running a Web campaign ($eid)\n";
+            continue;
+          }
+        } else {
+          $params['name'] = $campaign->title." - Web";
+          $params['response'] = "Error on campaign/get $eid";
+          _socialism_mailer("reportfail", null, $params);
+          continue;
+        }
+      }
+      if (isset($campaign->field_adroll_facebook_campaign_e[LANGUAGE_NONE])){
+        $eid = $campaign->field_adroll_facebook_campaign_e[LANGUAGE_NONE][0]['value'];
+				$response = _socialism_get_campaign_report($eid, $past_days = 90, $starttime = 0);
+//        $response = _socialism_adroll_api_call("api", "campaign", "get", array("campaign"=> $eid));
+        if($response){
+          if($response->status == "completed" || $response->status == "ended"){
+            $campaign_eids[] = $eid;
+          } elseif($response->status == "approved" || $response->status == "running") {
+            print $response->status."\n";
+            print "$campaign->title is still running a Facebook campaign ($eid)\n";
+            continue;
+          }
+        } else {
+          $params['name'] = $campaign->title." - Facebook";
+          $params['response'] = "Error on campaign/get $eid";
+          _socialism_mailer("reportfail", null, $params);
+          continue;
+        }
+      }
+
+      print "No reports harvested yet for $campaign->title\n";
+      $d = new DateTime();
+      $d->setTimestamp(strtotime($campaign->field_dates[LANGUAGE_NONE][0]['value'])-86400);
+      $datecount = clone $d;
+      $start = $d->format('Y-m-d');
+      $d = new DateTime();
+      $d->setTimestamp(strtotime($campaign->field_dates[LANGUAGE_NONE][0]['value2'])+86400);
+      $end = $d->format('Y-m-d');
+
+      $cost = 0.0;
+      foreach($campaign_eids as $eid){
+/*
+        $adgroups = _socialism_adroll_api_call("api", "campaign", "get_adgroups", array("campaign" => $eid));
+        $adgroup_eids = array();
+        $ad_eids = array();
+        $segment_eids = array();
+        if(isset($adgroups->results)){
+          foreach($adgroups->results as $adgroup){
+            $adgroup_eids[] = $adgroup->eid;
+            if(isset($adgroup->segments)){
+              foreach ($adgroup->segments as $segment){
+                $segment_eids[] = $segment->id;
+              }
+            }
+            if(isset($adgroup->ads)){
+              foreach ($adgroup->ads as $ad){
+                $ad_eids[] = $ad->id;
+              }
+            }
+          }
+        }
+*/
+print "$start - $end\n";
+        $params = array(
+          "variables" => null,
+          "operationName" => null,
+          "query" => "{ campaign { byEID(campaign: \"$eid\") { eid name metrics(start: \"$start\", end: \"$end\", currency: \"USD\") { byDate { impressions clicks cost viewThroughs clickThroughs viewRevenue clickRevenue conversions cpc cpm } } } } }"
+        );
+        
+
+        $response = _socialism_adroll_api_call("reporting/api", "query", null, $params, "POST");
+        if(!isset($response->data) || !isset($response->data->campaign)){
+          echo "Failed to get campaign report for $eid\n";
+          $params['name'] = $campaign->title;
+          $params['response'] = $response;
+          _socialism_mailer("reportfail", null, $params);
+          continue;
+        }
+//print_r($adgroup_eids);
+//print_r($ad_eids);
+//print_r($segment_eids);
+        foreach ($response->data->campaign->byEID->metrics->byDate as $data){
+//          print $datecount->format('Y-m-d')."\n";
+          $cost += $data->cost;
+//          print_r($data);
+          $datecount->setTimestamp($datecount->format("U") + 86400);
+        }
+//print_r($response->data->campaign->byEID->metrics->byDate);
+      }
+
+      if($cost > 0){
+        $newnode = new stdClass();
+        $newnode->title = $campaign->title;
+        $newnode->type = "campaign_report";
+        node_object_prepare($newnode);
+        $newnode->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+        $newnode->uid = 1;
+        $newnode->status = 1; //(1 or 0): published or not
+        $newnode->promote = 0; //(1 or 0): promoted to front page
+        $newnode->comment = 0;
+        $newnode->field_final_upkeep_total = array(LANGUAGE_NONE => array(0 => array('value' => $cost)));
+        $newnode->field_source_campaign = array(LANGUAGE_NONE => array(0 => array('target_id' => $campaign->nid)));
+        $newnode = node_submit($newnode);
+        node_save($newnode);
+        $owner = user_load($campaign->uid);
+        $params = array(
+          "name" => $campaign->title,
+          "cost" => $cost,
+          "campaign" => $campaign
+        );
+        _socialism_mailer("finalize", $owner, $params);
+      }
+    }
+  }
+
+}
+
+function socialism_node_update($node){
+  dpm("node update hook");
+  dpm($node);
+  if($node->type == "ad_campaign" && $node->nid){
+    $dest = url("node/$node->nid/edit");
+    // XXX don't do this in the middle of a campaign launch
+
+    /*
+    unset($_REQUEST['destination']); 
+    unset($form['#redirect']); 
+
+    $form_state['redirect'] = $dest;
+    $form['#redirect'] = $dest;
+     */
+//    drupal_goto($dest);
+  }
+}
+
+function _socialism_save_callback($form, &$form_state){
+}
+
+function socialism_cron(){
+  _socialism_finish_campaigns();
+  _socialism_check_for_stuck_campaigns();
+}
