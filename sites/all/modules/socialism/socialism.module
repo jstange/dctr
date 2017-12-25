@@ -312,7 +312,7 @@ function socialism_mail($key, &$message, $params){
     $message['body'][] = t("<strong>Weekly budget:</strong> \$".$params['budget']."</p>", array(), array('langcode' => $langcode));
   }
   if($params['url']){
-    $message['body'][] = t("<p><a href='$base_url/".$params['url']."'>View your campaign</a></p>", array(), array('langcode' => $langcode));
+    $message['body'][] = t("<p><a href='$base_url/".$params['url']."'>View campaign</a></p>", array(), array('langcode' => $langcode));
   }
   if($params['ads'] && count($params['ads'])){
      $message['body'][] = t("<strong>Ads:</strong><ul>", array(), array('langcode' => $langcode));
@@ -349,7 +349,7 @@ function _socialism_mailer($reason = "launch", $owner, $params){
 function _socialism_launch_callback($form, &$form_state){
   global $user;
   $draft = false;
-$draft = true;
+//$draft = true;
   $owner = user_load($form_state['values']['uid']); // the button doesn't exist until the thing's been saved, so this should be safe
 
   $node = node_load($form_state['values']['nid']);

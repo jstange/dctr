@@ -182,7 +182,25 @@ div#edit-field-company-website {
   right:1em;
   background:white;
   border-radius:1em;
-  border:1px solid green;
+  border:2px solid #8ea61f;
+  display:none;
+}
+body.page-node-edit #block-block-3 {
+  display:block;
+}
+a.campaign-edit {
+  display:inline-block;
+  position:fixed;
+  bottom:1em;
+  right:1em;
+  padding:1em;
+  background-color:white;
+  font-size:x-large;
+  border-radius:1em;
+  border:2px inset #8ea61f;
+}
+a.campaign-edit:hover {
+  border:2px outset #8ea61f;
 }
 #campaign-startup,
 #campaign-weeks,
