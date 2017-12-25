@@ -13,6 +13,10 @@ function socialism_drush_command(){
     'description' => "Look for campaigns that are ostensibly running in Adroll, but have not served any impressions.",
     'aliases' => array('csc')
   );
+  $items['check-for-unlaunched-campaigns'] = array(
+    'description' => "Look for campaigns that are overdue to run, but have not yet been launched.",
+    'aliases' => array('cuc')
+  );
   $items['list-contacts'] = array(
     'description' => "Rattle off email addresses of everyone who uses the thing.",
     'aliases' => array('slc')
@@ -32,6 +36,10 @@ function drush_socialism_list_contacts(){
     }
   }
   print implode(", ", array_unique($emails))."\n";
+}
+
+function drush_socialism_check_for_unlaunched_campaigns(){
+  _socialism_find_unlaunched_campaigns();
 }
 
 function drush_socialism_check_for_stuck_campaigns(){

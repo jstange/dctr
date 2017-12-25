@@ -272,6 +272,10 @@ function socialism_mail($key, &$message, $params){
     case 'launch':
       $message['subject'] = "Campaign launched: ".$params['name'];
       break;
+    case 'latelaunch':
+      $message['subject'] = "Campaign is late to launch: ".$params['title'];
+      $message['body'][] = t("<pre>".print_r($params, true)."</pre>", array(), array('langcode' => $langcode));
+      break;
     case 'finalize':
       $message['subject'] = "Ad campaign '".$params['name']."' completed";
       $message['body'][] = t("<p>The total weekly upkeep cost for this campaign came to: \$".$params['cost']."</p>", array(), array('langcode' => $langcode));
@@ -335,8 +339,7 @@ function _socialism_mailer($reason = "launch", $owner, $params){
   if($params['status'] == "draft"){
     $to = $site_mail;
   }
-  if($reason == "launchfail" || $reason == "adfail" || $reason == "reportfail" || $reason == "stuck"){
-    // Notify me by email if a campaign launch fails
+  if($reason == "launchfail" || $reason == "adfail" || $reason == "reportfail" || $reason == "stuck" || $reason == "latelaunch"){
     drupal_mail("socialism", $reason, $site_mail, language_default(), $params, $site_mail, true);
   } else {
     drupal_mail("socialism", $reason, $to, language_default(), $params, $site_mail, true);
@@ -1295,7 +1298,34 @@ function socialism_node_update($node){
 function _socialism_save_callback($form, &$form_state){
 }
 
+function _socialism_find_unlaunched_campaigns(){
+  $q = new EntityFieldQuery();
+  $q->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', "ad_campaign")
+    ->propertyCondition('status', NODE_PUBLISHED);
+//    ->fieldCondition('field_adroll_campaign_eid', 'value', NULL, "IS NULL");
+// XXX sure would be nice to only act on campaigns without Adroll EIDs, but the filter doesn't seem to work
+  $campaigns = $q->execute();
+  $nids = array();
+  if (isset($campaigns['node']) && is_array($campaigns['node'])) {
+    foreach($campaigns['node'] as $n){
+      $nids[] = $n->nid;
+    }
+  }
+  $nodes = node_load_multiple($nids);
+  foreach ($nodes as $c){
+    $start = strtotime($c->field_dates[LANGUAGE_NONE][0]['value']);
+    if($start < time()-86400 && $start > time()-(86400*5) &&
+       $c->field_adroll_campaign_eid == array() &&
+       $c->ield_adroll_facebook_campaign_e == array()){
+      echo "$c->title was expected to launch on ".date("Y-m-d", $start)."\n";
+      _socialism_mailer("latelaunch", null, (array)$c);
+    }
+  }
+}
+
 function socialism_cron(){
   _socialism_finish_campaigns();
   _socialism_check_for_stuck_campaigns();
+  _socialism_find_unlaunched_campaigns();
 }
