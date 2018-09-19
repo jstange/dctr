@@ -229,3 +229,7 @@ body.node-type-ad-campaign div#block-block-5 {
   margin-right:0.3em;
   vertical-align:middle;
 }
+
+form.node-ad_campaign-form div.form-actions input[type="submit"] {
+  font-size:2em;
+}

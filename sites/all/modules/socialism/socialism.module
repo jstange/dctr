@@ -14,7 +14,9 @@ function socialism_form_alter(&$form, &$form_state, $form_id) {
     unset($form['#metatags']);
     $form['#action'] = preg_replace("/\\?.*/", "", $form['#action']);
     $homeblock = block_load('block', '5');
-    $form['#prefix'] = drupal_render(_block_get_renderable_array(_block_render_blocks(array($homeblock))));
+    $block_renderable = _block_render_blocks(array($homeblock));
+    $block_rendered = _block_get_renderable_array($block_renderable);
+    $form['#prefix'] = drupal_render($block_rendered);
     $form['#groups']['group_web']->label = "";
     $form['#groups']['group_facebook']->label = "";
     $form['field_web_ad_landing_page']['#suffix'] = "<div class='edit-field-web-ad-landing-page-und-0-value-msg'></div>";
@@ -198,13 +200,15 @@ function _socialism_ad_eid($name){
 function _socialism_create_ad($image, $url, $domain, $fb_button = null, $fb_headline = null, $fb_body = null, $fb_message = null){
   global $ad_cache;
   $file = file_load($image['fid']);
+
   if(!$file){
     // XXX throw a warning
     return;
   }
-  $eid = _socialism_ad_eid($file->filename);
+  $filename = preg_replace("/.*?\/([^\/]+)$/", '\1', $file->uri);
+  $eid = _socialism_ad_eid($filename);
   if($eid){
-    return(array($file->filename, $eid));
+    return(array($filename, $eid));
   }
 
   $fhandle = fopen($file->uri, 'r');
@@ -229,7 +233,7 @@ function _socialism_create_ad($image, $url, $domain, $fb_button = null, $fb_head
     "advertisable" => _socialism_get_advertisable_eid(),
     "destination_url" => $url.$tracking,
     "tracking" => $tracking,
-    "name" => $file->filename,
+    "name" => $filename,
     "display_url_override" => $domain, // XXX seems to ignore this
     "file" => "@".drupal_realpath($file->uri)
 //    "file" => "@".drupal_realpath($tmpfile),
@@ -244,18 +248,18 @@ function _socialism_create_ad($image, $url, $domain, $fb_button = null, $fb_head
     $params['call_to_action'] = $fb_button;
   }
 
-  drupal_set_message("Uploading ad <strong>".$file->filename."</strong>");
+  drupal_set_message("Uploading ad <strong>".$filename."</strong>");
   $response = _socialism_adroll_api_call("api", "ad", "create", $params, "POST");
   if($response && isset($response->results)){
 //    drupal_set_message("Upload of <strong>".$file->filename."</strong> succeeded");
 //    dpm($response);
     _socialism_ad_eid(null); // make sure our ad cache is already populated
     $ad_cache[] = $response->results;
-    return(array($file->filename, $response->results->eid));
+    return(array($filename, $response->results->eid));
   } else {
     $params['response'] = $response;
     _socialism_mailer("adfail", null, $params);
-    drupal_set_message("Upload of <strong>".$file->filename."</strong> failed", "error");
+    drupal_set_message("Upload of <strong>".$filename."</strong> failed", "error");
     drupal_set_message("Notifying <strong>".variable_get('site_mail', '')."</strong> for help", "error");
     return(null);
   }
@@ -302,19 +306,19 @@ function socialism_mail($key, &$message, $params){
       $message['body'][] = t("<pre>".print_r($params, true)."</pre>", array(), array('langcode' => $langcode));
       break;
   }
-  if($params['start_date']){
+  if(array_key_exists("start_date", $params) && $params['start_date']){
     if(!$params['end_date']){
       $params['end_date'] = "ONGOING";
     }
     $message['body'][] = t("<p><strong>Run Dates:</strong> ".$params['start_date']." - ".$params['end_date']."<br/>", array(), array('langcode' => $langcode));
   }
-  if($params['budget']){
+  if(array_key_exists("budget", $params) && $params['budget']){
     $message['body'][] = t("<strong>Weekly budget:</strong> \$".$params['budget']."</p>", array(), array('langcode' => $langcode));
   }
-  if($params['url']){
+  if(array_key_exists("url", $params) && $params['url']){
     $message['body'][] = t("<p><a href='$base_url/".$params['url']."'>View campaign</a></p>", array(), array('langcode' => $langcode));
   }
-  if($params['ads'] && count($params['ads'])){
+  if(array_key_exists("ads", $params) && $params['ads'] && count($params['ads'])){
      $message['body'][] = t("<strong>Ads:</strong><ul>", array(), array('langcode' => $langcode));
     foreach ($params['ads'] as $adname){
        $message['body'][] = t("<li> $adname<br/><img src='$base_url/sites/default/files/".urlencode($adname)."'>", array(), array('langcode' => $langcode));
@@ -336,7 +340,7 @@ function _socialism_mailer($reason = "launch", $owner, $params){
 	  }
 	}
   $to = implode(", ", array_unique($recips));
-  if($params['status'] == "draft"){
+  if(array_key_exists("status", $params) && $params['status'] == "draft"){
     $to = $site_mail;
   }
   if($reason == "launchfail" || $reason == "adfail" || $reason == "reportfail" || $reason == "stuck" || $reason == "latelaunch"){
@@ -349,7 +353,7 @@ function _socialism_mailer($reason = "launch", $owner, $params){
 function _socialism_launch_callback($form, &$form_state){
   global $user;
   $draft = false;
-//$draft = true;
+
   $owner = user_load($form_state['values']['uid']); // the button doesn't exist until the thing's been saved, so this should be safe
 
   $node = node_load($form_state['values']['nid']);
@@ -357,11 +361,20 @@ function _socialism_launch_callback($form, &$form_state){
     if(empty($type)){
       continue;
     }
+    if($type == "Web" && !empty($form['field_adroll_campaign_eid'][LANGUAGE_NONE][0]['value']['#default_value'])){
+      dpm("Web campaign already launched, skipping");
+      continue;
+    }
+    if($type == "Facebook" && !empty($form['field_adroll_facebook_campaign_e'][LANGUAGE_NONE][0]['value']['#default_value'])){
+      dpm("Facebook campaign already launched, skipping");
+      continue;
+    }
 
     $name = $owner->field_company_website[LANGUAGE_NONE][0]['title']." - ".$form_state['input']['title']." - ".$type;
     $domain = preg_replace("/^(?:https?:\/\/)?.*?([^\.]+\.[^\.\/]+)(?:\/.*|$)/", '\1', $owner->field_company_website[LANGUAGE_NONE][0]['url']);
     $ads = array();
     foreach ($form_state['input']['field_'.strtolower($type).'_ads'][LANGUAGE_NONE] as $image){
+      dpm($image);
 
       if($image['fid'] > 0){
         if($type == "Web"){
@@ -521,6 +534,9 @@ function _socialism_get_campaign_report($eid, $past_days = 90, $starttime = 0){
   );
 
   $results = _socialism_adroll_api_call("reporting/api", "query", null, $params, "POST");
+  if(!isset($results) && !isset($results->data)){
+    return(null);
+  }
 	return($results->data->campaign->byEID);
 }
 
@@ -573,14 +589,23 @@ function _socialism_display_campaign($c = null, $eid = null, $start = null, $end
   } else if(!$c){
     return(null);
   }
-  if(!$details && $c->status != "approved" && $c->status != "completed" && $c->status != "ended" && $response->status != "running"){
+
+  if(!$details && $c->status != "approved" && $c->status != "completed" && $c->status != "ended"){
     return("");
   }
 
   $output = "";
   $name = html_entity_decode(isset($c->campaign) ? $c->campaign : $c->name);
-  preg_match('/ - ([^-]*)$/', $name, $matches);
-  $type = $matches[1];
+  $type = "";
+  if(isset($c->channel) && $c->channel == "social"){
+    $type = "Facebook";
+  } else if(preg_match('/ - ([^-]*)$/', $name, $matches)){
+    preg_match('/ - ([^-]*)$/', $name, $matches);
+    $type = $matches[1];
+  }
+  if($type == "" || $type == null){
+    watchdog("socialism", "Failed at determining type of campaign '$name'\n<pre>".print_r($c, true)."</pre>");
+  }
   preg_match('/^([^-]*)( - |$)/', $name, $matches);
   $company = $matches[1];
   $img = "";
@@ -660,7 +685,7 @@ function _socialism_list_adroll_campaigns($returnraw = false){
     $params = array(
       "variables" => null,
       "operationName" => null,
-      "query" => "{ advertisable { byEID(advertisable: \""._socialism_get_advertisable_eid()."\") { eid name campaigns { eid name budget createdDate startDate endDate channel status metrics(start: \"$start\", end: \"$end\", currency: \"USD\") { summary { impressions clicks cost totalVisitors bounceRate ctr conversions roi } } } } } }"
+      "query" => "{ advertisable { byEID(advertisable: \""._socialism_get_advertisable_eid()."\") { eid name campaigns { eid name budget createdDate startDate endDate channel status metrics(start: \"$start\", end: \"$end\", currency: \"USD\") { summary { impressions clicks cost bounceRate ctr conversions roi } } } } } }"
     );
     $results = _socialism_adroll_api_call("reporting/api", "query", null, $params, "POST");
     $report_cache = array();
@@ -707,7 +732,8 @@ function _socialism_list_adroll_campaigns($returnraw = false){
       $result = $query->execute();
 
       if (isset($result['node']) && is_array($result['node'])) {
-        $nid = array_pop(array_keys($result['node']));
+        $nids = array_keys($result['node']);
+        $nid = array_pop($nids);
         $node = node_load($nid);
         if($node->uid == $user->uid || $user->uid == 1){  
           if($node->field_adroll_campaign_eid[LANGUAGE_NONE][0]['value'] == $c->eid){
@@ -719,8 +745,8 @@ function _socialism_list_adroll_campaigns($returnraw = false){
 //        continue;
 //      }
     }
-    if(strtotime($c->startDate) < time()-(86400*90)){
-      $output .= _socialism_display_campaign($c, $c->eid, date("Y-m-d", strtotime($c->start_date)), date("Y-m-d", strtotime($c->endDate)), $details);
+    if(isset($c) && isset($c->startDate) && strtotime($c->startDate) < time()-(86400*90)){
+      $output .= _socialism_display_campaign($c, $c->eid, date("Y-m-d", strtotime($c->startDate)), date("Y-m-d", strtotime($c->endDate)), $details);
     } else {
       $output .= _socialism_display_campaign($c, null, null, null, $details);
     }
@@ -989,9 +1015,11 @@ function _socialism_adroll_api_call($api = "api", $section, $call, $params = arr
   if(!empty($call)){
     $base_url = "https://services.adroll.com/$api/v1/$section/$call";
     $url = "https://services.adroll.com/$api/v1/$section/$call?apikey=$apikey";
+    $err_url = "/$api/v1/$section/$call";
   } else {
     $base_url = "https://services.adroll.com/$api/v1/$section";
     $url = "https://services.adroll.com/$api/v1/$section?apikey=$apikey";
+    $err_url = "/$api/v1/$section";
   }
   $data = "";
   if(count($params) > 0){
@@ -1036,11 +1064,19 @@ function _socialism_adroll_api_call($api = "api", $section, $call, $params = arr
       $cmd = "/usr/bin/curl 'https://$credentials@services.adroll.com/$api/v1/$section?apikey=$apikey' ".implode(" ", $cmdlineparams);
     } else {
       foreach ($params as $key => $val){
-        $cmdlineparams[] = "-F $key='$val'";
+        if(mb_detect_encoding($val) != "ASCII"){
+          $val = mb_convert_encoding($val, "ASCII");
+        }
+        if(preg_match("/'/", $val)){
+          $val = preg_replace('/"/', '\"', $val);
+          $cmdlineparams[] = "-F $key=\"$val\"";
+        } else {
+          $cmdlineparams[] = "-F $key='$val'";
+        }
       }
       $cmd = "/usr/bin/curl 'https://$credentials@services.adroll.com/$api/v1/$section/$call?apikey=$apikey' ".implode(" ", $cmdlineparams);
     }
-dpm($cmd);
+    $err_url .= " PARAMETERS: ".implode(" ", $cmdlineparams);
 
 //drush_log($cmd, "ok");
 //echo $cmd;
@@ -1048,7 +1084,7 @@ dpm($cmd);
     $json = json_decode($output);
     if(isset($json->errors)){
       foreach ($json->errors as $err){
-        drupal_set_message("Got '".$err->message."' while ${method}ing Adroll API endpoint $section/$call", "warning");
+        drupal_set_message("Got <strong>".print_r($err, true)."</strong> while ${method}ing Adroll API endpoint <strong>$err_url</strong>", "warning");
       }
       watchdog("adroll", "$url<pre>\n".print_r($json, true)."</pre>", array(), WATCHDOG_ERROR);
       return(null);
@@ -1057,10 +1093,9 @@ dpm($cmd);
     return($json);
     // XXX end incredibly stupid workaround
   }
-dpm($url);
+
 //drush_log($url, "ok");
 if(count($params) > 0){
-dpm($params);
 //drush_log(print_r($params, true), "ok");
 }
   curl_setopt($ch, CURLOPT_URL, $url);
@@ -1278,8 +1313,6 @@ print "$start - $end\n";
 }
 
 function socialism_node_update($node){
-  dpm("node update hook");
-  dpm($node);
   if($node->type == "ad_campaign" && $node->nid){
     $dest = url("node/$node->nid/edit");
     // XXX don't do this in the middle of a campaign launch
