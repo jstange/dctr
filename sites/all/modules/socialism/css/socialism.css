@@ -1,3 +1,8 @@
+div.form-item-field-campaigns-und-Facebook {
+  color:gray;
+  text-decoration: line-through;
+}
+
 div.field-name-field-dates div.date-no-float {
   display:inline-block;
   width:auto;

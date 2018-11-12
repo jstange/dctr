@@ -91,6 +91,7 @@ console.log(xhr);
         $('#edit-field-bid-und-value-value, input#edit-field-campaigns-und-facebook, input#edit-field-campaigns-und-web, #edit-field-dates-und-0-value-datepicker-popup-0, #edit-field-dates-und-0-value2-datepicker-popup-0').change(function() {
           setEstimatedCampaignCost();
         });
+        $( "input#edit-field-campaigns-und-facebook" ).prop( "disabled", true );
         $("body.page-user div.field-name-field-company-website").each(function(){
           var url = $(this).find("a").attr("href");
           if(url == null || url == ""){
