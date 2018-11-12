@@ -216,15 +216,11 @@ function entity_token_tokens($type, $tokens, array $data = array(), array $optio
   }
   // Add support for evaluating tokens for "list<type"> types.
   elseif ($item_token_type = entity_property_list_extract_type($type)) {
-    echo $item_token_type."<br />";
     foreach ($tokens as $name => $original) {
-    echo $name."<br />";
-    echo $original."<br />";
       // Care about getting entries of a list.
       if (is_numeric($name)) {
         $wrapper = !isset($wrapper) ? _entity_token_wrap_data($type, "list<$token_types[$item_token_type]>", $data[$type], $options) : $wrapper;
         try {
-    print_r($options);
           $replacement = _entity_token_get_token($wrapper->get($name), $options);
           if (isset($replacement)) {
             $replacements[$original] = $replacement;
